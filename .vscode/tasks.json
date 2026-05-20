@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-devexpress-demo",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "DevExpressTreeListDemo.csproj",
+        "-c",
+        "Debug",
+        "-p:Platform=x64"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$msCompile"
+      ]
+    },
+    {
+      "label": "run-devexpress-demo",
+      "type": "shell",
+      "command": "${workspaceFolder}/bin/x64/Debug/DevExpressTreeListDemo.exe",
+      "dependsOn": "build-devexpress-demo",
+      "problemMatcher": []
+    }
+  ]
+}
