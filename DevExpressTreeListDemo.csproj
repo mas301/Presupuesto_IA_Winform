@@ -82,6 +82,10 @@
       <HintPath>$(DevExpressAssembliesPath)DevExpress.XtraEditors.v$(DevExpressVersion).dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="DevExpress.XtraGrid.v$(DevExpressVersion)">
+      <HintPath>$(DevExpressAssembliesPath)DevExpress.XtraGrid.v$(DevExpressVersion).dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="DevExpress.XtraTreeList.v$(DevExpressVersion)">
       <HintPath>$(DevExpressAssembliesPath)DevExpress.XtraTreeList.v$(DevExpressVersion).dll</HintPath>
       <Private>True</Private>

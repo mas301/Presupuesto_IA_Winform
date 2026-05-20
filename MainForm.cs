@@ -2,6 +2,9 @@
 using System.Windows.Forms;
 using DevExpress.XtraTreeList;
 using DevExpress.XtraTreeList.Nodes;
+using DevExpress.XtraEditors.Repository;
+using DevExpress.XtraEditors.Controls;
+using DevExpress.XtraGrid.Views.Grid;
 
 namespace DevExpressTreeListDemo
 {
@@ -18,8 +21,62 @@ namespace DevExpressTreeListDemo
         public MainForm()
         {
             InitializeComponent();
+            ConfigureResourceTypeColumnEditor();
             BuildTree();
             treeList1.ExpandAll();
+        }
+
+        private void ConfigureResourceTypeColumnEditor()
+        {
+            string[] resourceTypes = new[]
+            {
+                "Subpresupuesto",
+                "Partida",
+                "Materia Prima",
+                "Mano de Obra",
+                "Equipos",
+                "Herramientas",
+                "Subcontratos",
+                "Servicios"
+            };
+
+            // Solo la segunda columna queda editable para seleccionar/buscar tipos de recurso.
+            treeList1.OptionsBehavior.Editable = true;
+            for (int i = 0; i < treeList1.Columns.Count; i++)
+            {
+                treeList1.Columns[i].OptionsColumn.AllowEdit = false;
+            }
+
+            var resourceTypeColumn = treeList1.Columns[1];
+            resourceTypeColumn.Caption = "Tipo Recurso";
+            resourceTypeColumn.OptionsColumn.AllowEdit = true;
+
+            var table = new System.Data.DataTable();
+            table.Columns.Add("TipoRecurso", typeof(string));
+            for (int i = 0; i < resourceTypes.Length; i++)
+            {
+                table.Rows.Add(resourceTypes[i]);
+            }
+
+            var editor = new RepositoryItemGridLookUpEdit();
+            editor.TextEditStyle = TextEditStyles.Standard;
+            editor.NullText = string.Empty;
+            editor.ImmediatePopup = true;
+            editor.PopupFilterMode = DevExpress.XtraEditors.PopupFilterMode.Contains;
+            editor.DataSource = table;
+            editor.DisplayMember = "TipoRecurso";
+            editor.ValueMember = "TipoRecurso";
+
+            GridView popupView = editor.View;
+            popupView.Columns.Clear();
+            popupView.Columns.AddVisible("TipoRecurso", "Tipo de recurso");
+            popupView.OptionsView.ShowColumnHeaders = true;
+            popupView.OptionsView.ShowIndicator = false;
+            popupView.OptionsSelection.EnableAppearanceFocusedCell = false;
+            popupView.FocusRectStyle = DevExpress.XtraGrid.Views.Grid.DrawFocusRectStyle.RowFocus;
+
+            treeList1.RepositoryItems.Add(editor);
+            resourceTypeColumn.ColumnEdit = editor;
         }
 
         private void treeList1_PopupMenuShowing(object sender, DevExpress.XtraTreeList.PopupMenuShowingEventArgs e)

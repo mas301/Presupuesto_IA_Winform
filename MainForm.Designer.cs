@@ -14,6 +14,7 @@ namespace DevExpressTreeListDemo
         private System.Windows.Forms.ToolStripMenuItem menuCutItem;
         private System.Windows.Forms.ToolStripMenuItem menuPasteItem;
         private System.Windows.Forms.ToolStripMenuItem menuPasteItemBelow;
+        private System.Windows.Forms.ToolStripSeparator menuMoveSeparator;
         private System.Windows.Forms.ToolStripMenuItem menuMoveRight;
         private System.Windows.Forms.ToolStripMenuItem menuMoveLeft;
         private System.Windows.Forms.ToolStripMenuItem menuMoveUp;
@@ -46,6 +47,7 @@ namespace DevExpressTreeListDemo
             this.menuCutItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuPasteItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuPasteItemBelow = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuMoveSeparator = new System.Windows.Forms.ToolStripSeparator();
             this.menuMoveRight = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMoveLeft = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMoveUp = new System.Windows.Forms.ToolStripMenuItem();
@@ -83,6 +85,7 @@ namespace DevExpressTreeListDemo
             this.menuCutItem,
             this.menuPasteItem,
             this.menuPasteItemBelow,
+            this.menuMoveSeparator,
             this.menuMoveRight,
             this.menuMoveLeft,
             this.menuMoveUp,
@@ -153,6 +156,11 @@ namespace DevExpressTreeListDemo
             this.menuPasteItemBelow.Size = new System.Drawing.Size(216, 22);
             this.menuPasteItemBelow.Text = "Pegar Item Abajo";
             this.menuPasteItemBelow.Click += new System.EventHandler(this.menuPasteItemBelow_Click);
+            // 
+            // menuMoveSeparator
+            // 
+            this.menuMoveSeparator.Name = "menuMoveSeparator";
+            this.menuMoveSeparator.Size = new System.Drawing.Size(220, 6);
             // 
             // menuMoveRight
             // 
