@@ -7,36 +7,56 @@ namespace DevExpressTreeListDemo
 {
     internal sealed class ResourceTypePolicy
     {
+        private const int ResourceTypeValueIndex = 1;
+        private const string TypePartida = "Partida";
+        private const string TypeMateriaPrima = "Materia Prima";
+        private const string TypeManoDeObra = "Mano de Obra";
+        private const string TypeEquipos = "Equipos";
+        private const string TypeHerramientas = "Herramientas";
+        private const string TypeSubcontratos = "Subcontratos";
+        private const string TypeServicios = "Servicios";
+        private const string TypeContratos = "Contratos";
+        private const string TypeSubpresupuesto = "Subpresupuesto";
+        private const string ResourceTypeColumnName = "TipoRecurso";
+
         private readonly HashSet<string> validResourceTypes;
+        private readonly Dictionary<int, string> resourceTypeNamesById;
 
         private static readonly HashSet<string> TypesThatRequirePartidaParent = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "Materia Prima",
-            "Mano de Obra",
-            "Equipos",
-            "Herramientas",
-            "Subcontratos",
-            "Servicios"
+            TypeMateriaPrima,
+            TypeManoDeObra,
+            TypeEquipos,
+            TypeHerramientas,
+            TypeSubcontratos,
+            TypeServicios
         };
 
         private static readonly HashSet<string> TypesThatCannotHaveChildren = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "Materia Prima",
-            "Mano de Obra",
-            "Equipos",
-            "Herramientas",
-            "Contratos",
-            "Servicios"
+            TypeMateriaPrima,
+            TypeManoDeObra,
+            TypeEquipos,
+            TypeHerramientas,
+            TypeContratos,
+            TypeServicios
         };
 
         private static readonly HashSet<string> TypesForbiddenUnderPartida = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "Subpresupuesto"
+            TypeSubpresupuesto
         };
 
-        public ResourceTypePolicy(IEnumerable<string> validResourceTypes = null)
+        public ResourceTypePolicy(IEnumerable<string> validResourceTypes = null, IDictionary<int, string> resourceTypeNamesById = null)
         {
             this.validResourceTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            this.resourceTypeNamesById = new Dictionary<int, string>();
+
+            if (resourceTypeNamesById != null)
+            {
+                foreach (var item in resourceTypeNamesById)
+                    this.resourceTypeNamesById[item.Key] = item.Value;
+            }
 
             if (validResourceTypes == null)
                 return;
@@ -51,7 +71,17 @@ namespace DevExpressTreeListDemo
 
         public string NormalizeTypeName(object value)
         {
-            return (value == null ? string.Empty : Convert.ToString(value)).Trim();
+            if (value == null)
+                return string.Empty;
+
+            if (value is int id && resourceTypeNamesById.TryGetValue(id, out string typeNameById))
+                return typeNameById;
+
+            string text = Convert.ToString(value);
+            if (int.TryParse(text, out int parsedId) && resourceTypeNamesById.TryGetValue(parsedId, out string typeNameByParsedId))
+                return typeNameByParsedId;
+
+            return text == null ? string.Empty : text.Trim();
         }
 
         public bool IsPartida(TreeListNode node)
@@ -59,7 +89,15 @@ namespace DevExpressTreeListDemo
             if (node == null)
                 return false;
 
-            return string.Equals(NormalizeTypeName(node.GetValue(1)), "Partida", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(NormalizeTypeName(node.GetValue(ResourceTypeValueIndex)), TypePartida, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public bool IsSubpresupuesto(TreeListNode node)
+        {
+            if (node == null)
+                return false;
+
+            return string.Equals(NormalizeTypeName(node.GetValue(ResourceTypeValueIndex)), TypeSubpresupuesto, StringComparison.OrdinalIgnoreCase);
         }
 
         public bool CanParentAcceptChildren(TreeListNode parentNode)
@@ -67,7 +105,7 @@ namespace DevExpressTreeListDemo
             if (parentNode == null)
                 return true;
 
-            return !TypesThatCannotHaveChildren.Contains(NormalizeTypeName(parentNode.GetValue(1)));
+            return !TypesThatCannotHaveChildren.Contains(NormalizeTypeName(parentNode.GetValue(ResourceTypeValueIndex)));
         }
 
         public bool CanBePlacedUnder(TreeListNode parentNode, string childTypeName)
@@ -89,7 +127,7 @@ namespace DevExpressTreeListDemo
             if (node == null)
                 return false;
 
-            string value = NormalizeTypeName(node.GetValue(1));
+            string value = NormalizeTypeName(node.GetValue(ResourceTypeValueIndex));
             return !string.IsNullOrEmpty(value) && validResourceTypes.Contains(value);
         }
 
@@ -101,7 +139,7 @@ namespace DevExpressTreeListDemo
             if (node != null && node.Nodes.Count > 0 && TypesThatCannotHaveChildren.Contains(candidateType))
                 return false;
 
-            if (node != null && HasRestrictedDirectChild(node) && !string.Equals(candidateType, "Partida", StringComparison.OrdinalIgnoreCase))
+            if (node != null && HasRestrictedDirectChild(node) && !string.Equals(candidateType, TypePartida, StringComparison.OrdinalIgnoreCase))
                 return false;
 
             return true;
@@ -113,7 +151,7 @@ namespace DevExpressTreeListDemo
             for (int i = 0; i < allResourceTypesTable.Rows.Count; i++)
             {
                 DataRow row = allResourceTypesTable.Rows[i];
-                string candidateType = NormalizeTypeName(row["TipoRecurso"]);
+                string candidateType = NormalizeTypeName(row[ResourceTypeColumnName]);
 
                 if (IsTypeAllowedForNode(node, candidateType))
                     filtered.ImportRow(row);
@@ -129,7 +167,7 @@ namespace DevExpressTreeListDemo
 
             for (int i = 0; i < node.Nodes.Count; i++)
             {
-                if (TypesThatRequirePartidaParent.Contains(NormalizeTypeName(node.Nodes[i].GetValue(1))))
+                if (TypesThatRequirePartidaParent.Contains(NormalizeTypeName(node.Nodes[i].GetValue(ResourceTypeValueIndex))))
                     return true;
             }
 

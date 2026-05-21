@@ -1,0 +1,480 @@
+using DevExpress.XtraTreeList;
+using DevExpress.XtraTreeList.Nodes;
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
+
+namespace DevExpressTreeListDemo
+{
+    public partial class MainForm
+    {
+        private void treeList1_PopupMenuShowing(object sender, DevExpress.XtraTreeList.PopupMenuShowingEventArgs e)
+        {
+            e.Allow = false;
+        }
+
+        private void treeList1_FocusedNodeChanged(object sender, DevExpress.XtraTreeList.FocusedNodeChangedEventArgs e)
+        {
+            UpdateMoveActionsState(e.Node);
+        }
+
+        private void treeList1_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+                return;
+
+            TreeListHitInfo hitInfo = treeList1.CalcHitInfo(e.Location);
+
+            if (treeList1.Nodes.Count == 0 && (hitInfo.Node == null || hitInfo.HitInfoType != HitInfoType.Cell))
+            {
+                emptyContextMenu.Show(treeList1, e.Location);
+                return;
+            }
+
+            if (treeList1.Nodes.Count > 0 && hitInfo.HitInfoType == HitInfoType.Cell && hitInfo.Node != null)
+            {
+                treeList1.FocusedNode = hitInfo.Node;
+                treeList1.FocusedColumn = hitInfo.Column;
+                UpdateContextMenuVisibility(hitInfo.Node);
+                treeContextMenu.Show(treeList1, e.Location);
+                return;
+            }
+
+            UpdateMoveActionsState(null);
+        }
+
+        private void menuAddRootItem_Click(object sender, EventArgs e)
+        {
+            treeListItemService.AddRootItem();
+            RecalculateNumericRules();
+            MarkPendingAutoSave();
+        }
+
+        private void menuAddAbove_Click(object sender, EventArgs e)
+        {
+            treeListItemService.AddAbove(treeList1.FocusedNode);
+            RecalculateNumericRules();
+            MarkPendingAutoSave();
+        }
+
+        private void menuAddBelow_Click(object sender, EventArgs e)
+        {
+            treeListItemService.AddBelow(treeList1.FocusedNode);
+            RecalculateNumericRules();
+            MarkPendingAutoSave();
+        }
+
+        private void menuAddSubItem_Click(object sender, EventArgs e)
+        {
+            if (!treeListItemService.AddSubItem(treeList1.FocusedNode, out string validationMessage))
+            {
+                if (!string.IsNullOrEmpty(validationMessage))
+                    MessageBox.Show(validationMessage, "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                return;
+            }
+
+            RecalculateNumericRules();
+            MarkPendingAutoSave();
+        }
+
+        private void menuDeleteItem_Click(object sender, EventArgs e)
+        {
+            treeListItemService.Delete(treeList1.FocusedNode);
+            RecalculateNumericRules();
+            MarkPendingAutoSave();
+        }
+
+        private void menuCopyItem_Click(object sender, EventArgs e)
+        {
+            TreeListNode selectedNode = treeList1.FocusedNode;
+            if (selectedNode == null)
+                return;
+
+            clipboardData = treeListItemService.CaptureNode(selectedNode);
+        }
+
+        private void menuCutItem_Click(object sender, EventArgs e)
+        {
+            TreeListNode selectedNode = treeList1.FocusedNode;
+            if (selectedNode == null)
+                return;
+
+            treeListItemService.Cut(selectedNode, data => clipboardData = data);
+            RecalculateNumericRules();
+            MarkPendingAutoSave();
+        }
+
+        private void menuPasteItem_Click(object sender, EventArgs e)
+        {
+            if (!treeListItemService.Paste(treeList1.FocusedNode, clipboardData, false, out string validationMessage))
+            {
+                if (!string.IsNullOrEmpty(validationMessage))
+                    MessageBox.Show(validationMessage, "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                return;
+            }
+
+            RecalculateNumericRules();
+            MarkPendingAutoSave();
+        }
+
+        private void menuPasteItemBelow_Click(object sender, EventArgs e)
+        {
+            if (!treeListItemService.Paste(treeList1.FocusedNode, clipboardData, true, out string validationMessage))
+            {
+                if (!string.IsNullOrEmpty(validationMessage))
+                    MessageBox.Show(validationMessage, "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                return;
+            }
+
+            RecalculateNumericRules();
+            MarkPendingAutoSave();
+        }
+
+        private void menuMoveRight_Click(object sender, EventArgs e)
+        {
+            if (treeListItemService.MoveRight(treeList1.FocusedNode))
+            {
+                RecalculateNumericRules();
+                MarkPendingAutoSave();
+            }
+
+            UpdateMoveActionsState(treeList1.FocusedNode);
+        }
+
+        private void menuMoveLeft_Click(object sender, EventArgs e)
+        {
+            if (treeListItemService.MoveLeft(treeList1.FocusedNode))
+            {
+                RecalculateNumericRules();
+                MarkPendingAutoSave();
+            }
+
+            UpdateMoveActionsState(treeList1.FocusedNode);
+        }
+
+        private void menuMoveUp_Click(object sender, EventArgs e)
+        {
+            if (treeListItemService.MoveUp(treeList1.FocusedNode))
+            {
+                RecalculateNumericRules();
+                MarkPendingAutoSave();
+            }
+
+            UpdateMoveActionsState(treeList1.FocusedNode);
+        }
+
+        private void menuMoveDown_Click(object sender, EventArgs e)
+        {
+            if (treeListItemService.MoveDown(treeList1.FocusedNode))
+            {
+                RecalculateNumericRules();
+                MarkPendingAutoSave();
+            }
+
+            UpdateMoveActionsState(treeList1.FocusedNode);
+        }
+
+        private void menuModifyResource_Click(object sender, EventArgs e)
+        {
+            TreeListNode selectedNode = treeList1.FocusedNode;
+            if (selectedNode == null)
+                return;
+
+            EditResourceWithForm(selectedNode, true, true);
+        }
+
+        private void btnCreateResource_Click(object sender, EventArgs e)
+        {
+            List<TipoRecursoDto> resourceTypes;
+            List<RecursoDto> resources;
+            List<UnidadDto> units;
+            List<TipoCalculoDto> calculationTypes;
+            try
+            {
+                resourceTypes = Datos.ObtenerTiposRecurso(EmpresaId, true);
+                resources = Datos.ObtenerRecursos(EmpresaId);
+                units = Datos.ObtenerUnidades();
+                calculationTypes = Datos.ObtenerTiposCalculo(EmpresaId);
+            }
+            catch (System.Data.DataException ex)
+            {
+                MessageBox.Show(ex.GetBaseException().Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            using (var form = new ResourceEditForm(
+                resourceTypes,
+                resources,
+                units,
+                calculationTypes,
+                null,
+                null,
+                null,
+                null,
+                string.Empty,
+                null,
+                null,
+                true))
+            {
+                if (form.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                if (!form.SelectedTipoRecursoId.HasValue)
+                {
+                    MessageBox.Show("Seleccione un Tipo Recurso valido.", "Crear recurso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(form.RecursoTexto))
+                {
+                    MessageBox.Show("Ingrese el nombre del recurso.", "Crear recurso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                try
+                {
+                    int createdResourceId = Datos.CrearRecurso(
+                        EmpresaId,
+                        form.SelectedTipoRecursoId.Value,
+                        form.RecursoTexto,
+                        form.SelectedUnidadId);
+
+                    resourceNamesById[createdResourceId] = form.RecursoTexto;
+                    resourceUnitIdsByResourceId[createdResourceId] = form.SelectedUnidadId;
+                    ConfigureColumnEditors();
+                    MessageBox.Show("Recurso creado correctamente.", "Crear recurso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (System.Data.DataException ex)
+                {
+                    MessageBox.Show(ex.GetBaseException().Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void btnPropiedades_Click(object sender, EventArgs e)
+        {
+            using (var form = new Propiedades(
+                GrabacionAutomatica,
+                InicioNumeracion,
+                ColumnaTipoCalculoVisible,
+                ColumnaRendimientoVisible,
+                ColumnaHorasJornalVisible,
+                ColumnaCuadrillaVisible))
+            {
+                if (form.ShowDialog(this) == DialogResult.OK)
+                {
+                    GrabacionAutomatica = form.GrabacionAutomatica;
+                    InicioNumeracion = form.InicioNumeracion;
+                    ColumnaTipoCalculoVisible = form.ColumnaTipoCalculoVisible;
+                    ColumnaRendimientoVisible = form.ColumnaRendimientoVisible;
+                    ColumnaHorasJornalVisible = form.ColumnaHorasJornalVisible;
+                    ColumnaCuadrillaVisible = form.ColumnaCuadrillaVisible;
+                }
+            }
+        }
+
+        private void EditResourceWithForm(TreeListNode selectedNode, bool replicateToSameResource, bool preloadFromNode)
+        {
+            if (selectedNode == null)
+                return;
+
+            List<TipoRecursoDto> resourceTypes;
+            List<RecursoDto> resources;
+            List<UnidadDto> units;
+            List<TipoCalculoDto> calculationTypes;
+            try
+            {
+                resourceTypes = Datos.ObtenerTiposRecurso(EmpresaId, true);
+                resources = Datos.ObtenerRecursos(EmpresaId);
+                units = Datos.ObtenerUnidades();
+                calculationTypes = Datos.ObtenerTiposCalculo(EmpresaId);
+            }
+            catch (System.Data.DataException ex)
+            {
+                MessageBox.Show(ex.GetBaseException().Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            using (var form = new ResourceEditForm(
+                resourceTypes,
+                resources,
+                units,
+                calculationTypes,
+                preloadFromNode ? ToNullableInt(selectedNode.GetValue(ResourceTypeColumnIndex)) : null,
+                preloadFromNode ? ToNullableInt(selectedNode.GetValue(ResourceColumnIndex)) : null,
+                preloadFromNode ? ToNullableInt(selectedNode.GetValue(UnitColumnIndex)) : null,
+                preloadFromNode ? ToNullableInt(selectedNode.GetValue(CalculationTypeColumnIndex)) : null,
+                preloadFromNode ? ToStringOrEmpty(selectedNode.GetValue(AliasColumnIndex)) : string.Empty,
+                preloadFromNode
+                    ? (resourceTypePolicy.IsPartida(selectedNode)
+                        ? GetPartidaRendimientoManoObra(selectedNode)
+                        : ToNullableDecimal(selectedNode.GetValue(PerformanceColumnIndex)))
+                    : null,
+                preloadFromNode
+                    ? (resourceTypePolicy.IsPartida(selectedNode)
+                        ? GetPartidaRendimientoEquipos(selectedNode)
+                        : ToNullableDecimal(selectedNode.GetValue(CrewColumnIndex)))
+                    : null,
+                !preloadFromNode))
+            {
+                if (form.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                int? originalResourceId = ToNullableInt(selectedNode.GetValue(ResourceColumnIndex));
+
+                suppressPersistence = true;
+                try
+                {
+                    ApplyResourceEditsToNode(selectedNode, form, true);
+
+                    if (replicateToSameResource && originalResourceId.HasValue)
+                    {
+                        foreach (TreeListNode node in EnumerateAllNodes())
+                        {
+                            if (node == selectedNode)
+                                continue;
+
+                            int? nodeResourceId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                            if (!nodeResourceId.HasValue || nodeResourceId.Value != originalResourceId.Value)
+                                continue;
+
+                            ApplyResourceEditsToNode(node, form, false);
+                        }
+                    }
+                }
+                finally
+                {
+                    suppressPersistence = false;
+                }
+
+                RecalculateNumericRules();
+                MarkPendingAutoSave();
+            }
+        }
+
+        private void ApplyResourceEditsToNode(TreeListNode node, ResourceEditForm form, bool includeAlias)
+        {
+            node.SetValue(ResourceTypeColumnIndex, form.SelectedTipoRecursoId.HasValue ? (object)form.SelectedTipoRecursoId.Value : null);
+            node.SetValue(ResourceColumnIndex, form.SelectedRecursoId.HasValue ? (object)form.SelectedRecursoId.Value : null);
+            node.SetValue(UnitColumnIndex, form.SelectedUnidadId.HasValue ? (object)form.SelectedUnidadId.Value : null);
+            node.SetValue(CalculationTypeColumnIndex, form.SelectedTipoCalculoId.HasValue ? (object)form.SelectedTipoCalculoId.Value : null);
+            if (includeAlias)
+                node.SetValue(AliasColumnIndex, form.Alias ?? string.Empty);
+
+            if (resourceTypePolicy.IsPartida(node))
+            {
+                SetPartidaCalculationData(node, form.RendimientoManoObra, form.RendimientoEquipos);
+            }
+            else
+            {
+                node.SetValue(PerformanceColumnIndex, form.RendimientoManoObra.HasValue ? (object)form.RendimientoManoObra.Value : null);
+                node.SetValue(CrewColumnIndex, form.RendimientoEquipos.HasValue ? (object)form.RendimientoEquipos.Value : null);
+            }
+        }
+
+        private IEnumerable<TreeListNode> EnumerateAllNodes()
+        {
+            for (int i = 0; i < treeList1.Nodes.Count; i++)
+            {
+                foreach (TreeListNode node in EnumerateNodeRecursive(treeList1.Nodes[i]))
+                    yield return node;
+            }
+        }
+
+        private IEnumerable<TreeListNode> EnumerateNodeRecursive(TreeListNode node)
+        {
+            if (node == null)
+                yield break;
+
+            yield return node;
+
+            for (int i = 0; i < node.Nodes.Count; i++)
+            {
+                foreach (TreeListNode child in EnumerateNodeRecursive(node.Nodes[i]))
+                    yield return child;
+            }
+        }
+
+        private void UpdateContextMenuVisibility(TreeListNode targetNode)
+        {
+            if (targetNode == null)
+            {
+                UpdateMoveActionsState(null);
+                return;
+            }
+
+            string selectedType = resourceTypePolicy.NormalizeTypeName(targetNode.GetValue(ResourceTypeValueIndex));
+            TreeListNode targetParent = targetNode.ParentNode;
+            TreeListNode newParentOnIndent = GetPreviousSibling(targetNode);
+            TreeListNode newParentOnOutdent = targetParent == null ? null : targetParent.ParentNode;
+            TreeListNode[] nodes = new[] { targetNode };
+
+            bool canPasteHere = clipboardData != null
+                && resourceTypePolicy.HasAssignedResourceType(targetNode)
+                && resourceTypePolicy.CanBePlacedUnder(targetParent, resourceTypePolicy.NormalizeTypeName(clipboardData.Values[ResourceTypeValueIndex]));
+            menuPasteItem.Visible = canPasteHere;
+            menuPasteItemBelow.Visible = canPasteHere;
+            menuAddSubItem.Visible = resourceTypePolicy.CanParentAcceptChildren(targetNode) && resourceTypePolicy.HasAssignedResourceType(targetNode);
+
+            menuMoveRight.Visible = treeList1.CanIndentNodes(nodes) && resourceTypePolicy.CanBePlacedUnder(newParentOnIndent, selectedType);
+            menuMoveLeft.Visible = treeList1.CanOutdentNodes(nodes) && resourceTypePolicy.CanBePlacedUnder(newParentOnOutdent, selectedType);
+
+            UpdateMoveActionsState(targetNode);
+        }
+
+        private void UpdateMoveActionsState(TreeListNode targetNode)
+        {
+            bool canMoveUp = false;
+            bool canMoveDown = false;
+            bool canMoveRight = false;
+            bool canMoveLeft = false;
+
+            if (targetNode != null)
+            {
+                TreeListNode parent = targetNode.ParentNode;
+                int currentIndex = treeList1.GetNodeIndex(targetNode);
+                int siblingCount = parent == null ? treeList1.Nodes.Count : parent.Nodes.Count;
+
+                canMoveUp = currentIndex > 0;
+                canMoveDown = currentIndex >= 0 && currentIndex < siblingCount - 1;
+
+                string selectedType = resourceTypePolicy.NormalizeTypeName(targetNode.GetValue(ResourceTypeValueIndex));
+                TreeListNode[] nodes = new[] { targetNode };
+                TreeListNode newParentOnIndent = GetPreviousSibling(targetNode);
+                TreeListNode newParentOnOutdent = parent == null ? null : parent.ParentNode;
+
+                canMoveRight = newParentOnIndent != null
+                    && treeList1.CanIndentNodes(nodes)
+                    && resourceTypePolicy.CanBePlacedUnder(newParentOnIndent, selectedType);
+
+                canMoveLeft = parent != null
+                    && resourceTypePolicy.CanBePlacedUnder(newParentOnOutdent, selectedType);
+            }
+
+            if (btnMoveUp != null)
+                btnMoveUp.Enabled = canMoveUp;
+            if (btnMoveDown != null)
+                btnMoveDown.Enabled = canMoveDown;
+            if (btnMoveRight != null)
+                btnMoveRight.Enabled = canMoveRight;
+            if (btnMoveLeft != null)
+                btnMoveLeft.Enabled = canMoveLeft;
+        }
+
+        private TreeListNode GetPreviousSibling(TreeListNode node)
+        {
+            if (node == null)
+                return null;
+
+            TreeListNode parent = node.ParentNode;
+            int index = treeList1.GetNodeIndex(node);
+            if (index <= 0)
+                return null;
+
+            return parent == null ? treeList1.Nodes[index - 1] : parent.Nodes[index - 1];
+        }
+    }
+}

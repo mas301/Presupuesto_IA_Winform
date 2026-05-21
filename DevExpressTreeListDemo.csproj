@@ -98,14 +98,41 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CalculationTypeEditorService.cs" />
     <Compile Include="Datos.cs" />
     <Compile Include="NodeClipboardData.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="MainForm.TreeListEditing.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainForm.Persistence.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainForm.Calculations.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainForm.ContextMenu.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ResourceEditForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ResourceEditForm.Designer.cs">
+      <DependentUpon>ResourceEditForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Propiedades.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Propiedades.Designer.cs">
+      <DependentUpon>Propiedades.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ResourceEditorService.cs" />
+    <Compile Include="UnitEditorService.cs" />
     <Compile Include="ResourceTypeEditorService.cs" />
     <Compile Include="ResourceTypePolicy.cs" />
     <Compile Include="Program.cs" />

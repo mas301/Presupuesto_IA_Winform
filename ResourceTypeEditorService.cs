@@ -10,6 +10,10 @@ namespace DevExpressTreeListDemo
 {
     internal sealed class ResourceTypeEditorService
     {
+        private const int ResourceTypeColumnVisibleIndex = 1;
+        private const string ResourceTypeColumnName = "TipoRecurso";
+        private const string ResourceTypeIdColumnName = "TipoRecursoId";
+
         private readonly ResourceTypePolicy policy;
         private readonly DataTable allResourceTypesTable;
         private readonly RepositoryItemGridLookUpEdit displayEditor;
@@ -35,7 +39,7 @@ namespace DevExpressTreeListDemo
 
         private void TreeList_CustomNodeCellEditForEditing(object sender, GetCustomNodeCellEditEventArgs e)
         {
-            if (e.Column == null || e.Column.VisibleIndex != 1 || e.Node == null)
+            if (e.Column == null || e.Column.VisibleIndex != ResourceTypeColumnVisibleIndex || e.Node == null)
                 return;
 
             editingEditor.DataSource = policy.BuildAllowedResourceTypesTable(e.Node, allResourceTypesTable);
@@ -51,8 +55,8 @@ namespace DevExpressTreeListDemo
                 ImmediatePopup = true,
                 PopupFilterMode = DevExpress.XtraEditors.PopupFilterMode.Contains,
                 DataSource = table,
-                DisplayMember = "TipoRecurso",
-                ValueMember = "TipoRecurso"
+                DisplayMember = ResourceTypeColumnName,
+                ValueMember = ResourceTypeIdColumnName
             };
 
             return editor;
@@ -62,7 +66,7 @@ namespace DevExpressTreeListDemo
         {
             GridView popupView = editor.View;
             popupView.Columns.Clear();
-            popupView.Columns.AddVisible("TipoRecurso", "Tipo de recurso");
+            popupView.Columns.AddVisible(ResourceTypeColumnName, "Tipo de recurso");
             popupView.OptionsView.ShowColumnHeaders = false;
             popupView.OptionsView.ShowIndicator = false;
             popupView.OptionsSelection.EnableAppearanceFocusedCell = false;

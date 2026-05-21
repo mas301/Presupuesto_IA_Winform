@@ -23,6 +23,15 @@ namespace DevExpressTreeListDemo
         private System.Windows.Forms.ToolStripMenuItem menuModifyResource;
         private System.Windows.Forms.ContextMenuStrip emptyContextMenu;
         private System.Windows.Forms.ToolStripMenuItem menuAddRootItem;
+        private System.Windows.Forms.Panel topPanel;
+        private System.Windows.Forms.Button btnSaveBudgetDetail;
+        private System.Windows.Forms.Button btnCreateResource;
+        private System.Windows.Forms.Button btnPropiedades;
+        private System.Windows.Forms.Button btnMoveUp;
+        private System.Windows.Forms.Button btnMoveRight;
+        private System.Windows.Forms.Button btnMoveDown;
+        private System.Windows.Forms.Button btnMoveLeft;
+        private System.Windows.Forms.Label lblPendingSaveStatus;
 
         protected override void Dispose(bool disposing)
         {
@@ -56,10 +65,157 @@ namespace DevExpressTreeListDemo
             this.menuModifyResource = new System.Windows.Forms.ToolStripMenuItem();
             this.emptyContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.menuAddRootItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.topPanel = new System.Windows.Forms.Panel();
+            this.btnSaveBudgetDetail = new System.Windows.Forms.Button();
+            this.btnCreateResource = new System.Windows.Forms.Button();
+            this.btnPropiedades = new System.Windows.Forms.Button();
+            this.btnMoveUp = new System.Windows.Forms.Button();
+            this.btnMoveRight = new System.Windows.Forms.Button();
+            this.btnMoveDown = new System.Windows.Forms.Button();
+            this.btnMoveLeft = new System.Windows.Forms.Button();
+            this.lblPendingSaveStatus = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.treeList1)).BeginInit();
+            this.topPanel.SuspendLayout();
             this.emptyContextMenu.SuspendLayout();
             this.treeContextMenu.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // topPanel
+            // 
+            this.topPanel.Controls.Add(this.lblPendingSaveStatus);
+            this.topPanel.Controls.Add(this.btnMoveLeft);
+            this.topPanel.Controls.Add(this.btnMoveDown);
+            this.topPanel.Controls.Add(this.btnMoveRight);
+            this.topPanel.Controls.Add(this.btnMoveUp);
+            this.topPanel.Controls.Add(this.btnPropiedades);
+            this.topPanel.Controls.Add(this.btnCreateResource);
+            this.topPanel.Controls.Add(this.btnSaveBudgetDetail);
+            this.topPanel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.topPanel.Location = new System.Drawing.Point(0, 0);
+            this.topPanel.Name = "topPanel";
+            this.topPanel.Padding = new System.Windows.Forms.Padding(12, 6, 12, 4);
+            this.topPanel.Size = new System.Drawing.Size(900, 40);
+            this.topPanel.TabIndex = 1;
+            // 
+            // btnCreateResource
+            // 
+            this.btnCreateResource.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(167)))), ((int)(((byte)(84)))));
+            this.btnCreateResource.FlatAppearance.BorderSize = 0;
+            this.btnCreateResource.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnCreateResource.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCreateResource.ForeColor = System.Drawing.Color.White;
+            this.btnCreateResource.Location = new System.Drawing.Point(138, 5);
+            this.btnCreateResource.Name = "btnCreateResource";
+            this.btnCreateResource.Size = new System.Drawing.Size(116, 28);
+            this.btnCreateResource.TabIndex = 1;
+            this.btnCreateResource.Text = "Crear recurso";
+            this.btnCreateResource.UseVisualStyleBackColor = false;
+            this.btnCreateResource.Click += new System.EventHandler(this.btnCreateResource_Click);
+            // 
+            // btnPropiedades
+            // 
+            this.btnPropiedades.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(90)))), ((int)(((byte)(90)))));
+            this.btnPropiedades.FlatAppearance.BorderSize = 0;
+            this.btnPropiedades.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnPropiedades.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnPropiedades.ForeColor = System.Drawing.Color.White;
+            this.btnPropiedades.Location = new System.Drawing.Point(260, 5);
+            this.btnPropiedades.Name = "btnPropiedades";
+            this.btnPropiedades.Size = new System.Drawing.Size(110, 28);
+            this.btnPropiedades.TabIndex = 2;
+            this.btnPropiedades.Text = "Propiedades";
+            this.btnPropiedades.UseVisualStyleBackColor = false;
+            this.btnPropiedades.Click += new System.EventHandler(this.btnPropiedades_Click);
+            // 
+            // btnMoveUp
+            // 
+            this.btnMoveUp.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(90)))), ((int)(((byte)(90)))));
+            this.btnMoveUp.FlatAppearance.BorderSize = 0;
+            this.btnMoveUp.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnMoveUp.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnMoveUp.ForeColor = System.Drawing.Color.White;
+            this.btnMoveUp.Location = new System.Drawing.Point(376, 5);
+            this.btnMoveUp.Name = "btnMoveUp";
+            this.btnMoveUp.Size = new System.Drawing.Size(95, 28);
+            this.btnMoveUp.TabIndex = 3;
+            this.btnMoveUp.Text = "↑ Arriba";
+            this.btnMoveUp.Enabled = false;
+            this.btnMoveUp.UseVisualStyleBackColor = false;
+            this.btnMoveUp.Click += new System.EventHandler(this.menuMoveUp_Click);
+            // 
+            // btnMoveRight
+            // 
+            this.btnMoveRight.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(90)))), ((int)(((byte)(90)))));
+            this.btnMoveRight.FlatAppearance.BorderSize = 0;
+            this.btnMoveRight.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnMoveRight.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnMoveRight.ForeColor = System.Drawing.Color.White;
+            this.btnMoveRight.Location = new System.Drawing.Point(477, 5);
+            this.btnMoveRight.Name = "btnMoveRight";
+            this.btnMoveRight.Size = new System.Drawing.Size(95, 28);
+            this.btnMoveRight.TabIndex = 4;
+            this.btnMoveRight.Text = "→ Derecha";
+            this.btnMoveRight.Enabled = false;
+            this.btnMoveRight.UseVisualStyleBackColor = false;
+            this.btnMoveRight.Click += new System.EventHandler(this.menuMoveRight_Click);
+            // 
+            // btnMoveDown
+            // 
+            this.btnMoveDown.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(90)))), ((int)(((byte)(90)))));
+            this.btnMoveDown.FlatAppearance.BorderSize = 0;
+            this.btnMoveDown.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnMoveDown.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnMoveDown.ForeColor = System.Drawing.Color.White;
+            this.btnMoveDown.Location = new System.Drawing.Point(578, 5);
+            this.btnMoveDown.Name = "btnMoveDown";
+            this.btnMoveDown.Size = new System.Drawing.Size(95, 28);
+            this.btnMoveDown.TabIndex = 5;
+            this.btnMoveDown.Text = "↓ Abajo";
+            this.btnMoveDown.Enabled = false;
+            this.btnMoveDown.UseVisualStyleBackColor = false;
+            this.btnMoveDown.Click += new System.EventHandler(this.menuMoveDown_Click);
+            // 
+            // btnMoveLeft
+            // 
+            this.btnMoveLeft.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(90)))), ((int)(((byte)(90)))));
+            this.btnMoveLeft.FlatAppearance.BorderSize = 0;
+            this.btnMoveLeft.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnMoveLeft.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnMoveLeft.ForeColor = System.Drawing.Color.White;
+            this.btnMoveLeft.Location = new System.Drawing.Point(679, 5);
+            this.btnMoveLeft.Name = "btnMoveLeft";
+            this.btnMoveLeft.Size = new System.Drawing.Size(95, 28);
+            this.btnMoveLeft.TabIndex = 6;
+            this.btnMoveLeft.Text = "← Izquierda";
+            this.btnMoveLeft.Enabled = false;
+            this.btnMoveLeft.UseVisualStyleBackColor = false;
+            this.btnMoveLeft.Click += new System.EventHandler(this.menuMoveLeft_Click);
+            // 
+            // lblPendingSaveStatus
+            // 
+            this.lblPendingSaveStatus.AutoSize = true;
+            this.lblPendingSaveStatus.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblPendingSaveStatus.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(200)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
+            this.lblPendingSaveStatus.Location = new System.Drawing.Point(780, 11);
+            this.lblPendingSaveStatus.Name = "lblPendingSaveStatus";
+            this.lblPendingSaveStatus.Size = new System.Drawing.Size(0, 15);
+            this.lblPendingSaveStatus.TabIndex = 7;
+            this.lblPendingSaveStatus.Text = "";
+            // 
+            // btnSaveBudgetDetail
+            // 
+            this.btnSaveBudgetDetail.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(139)))), ((int)(((byte)(230)))));
+            this.btnSaveBudgetDetail.FlatAppearance.BorderSize = 0;
+            this.btnSaveBudgetDetail.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSaveBudgetDetail.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnSaveBudgetDetail.ForeColor = System.Drawing.Color.White;
+            this.btnSaveBudgetDetail.Location = new System.Drawing.Point(12, 5);
+            this.btnSaveBudgetDetail.Name = "btnSaveBudgetDetail";
+            this.btnSaveBudgetDetail.Size = new System.Drawing.Size(120, 28);
+            this.btnSaveBudgetDetail.TabIndex = 0;
+            this.btnSaveBudgetDetail.Text = "Grabar detalle";
+            this.btnSaveBudgetDetail.UseVisualStyleBackColor = false;
+            this.btnSaveBudgetDetail.Click += new System.EventHandler(this.btnSaveBudgetDetail_Click);
             // 
             // emptyContextMenu
             // 
@@ -200,6 +356,7 @@ namespace DevExpressTreeListDemo
             this.menuModifyResource.Name = "menuModifyResource";
             this.menuModifyResource.Size = new System.Drawing.Size(223, 22);
             this.menuModifyResource.Text = "Modificar recurso";
+            this.menuModifyResource.Click += new System.EventHandler(this.menuModifyResource_Click);
             // 
             // treeList1
             // 
@@ -207,15 +364,24 @@ namespace DevExpressTreeListDemo
             new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Item", VisibleIndex = 0, Visible = true },
             new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Nombre", VisibleIndex = 1, Visible = true },
             new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Tipo", VisibleIndex = 2, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Estado", VisibleIndex = 3, Visible = true }});
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Unidad", VisibleIndex = 3, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Tipo Calculo", VisibleIndex = 4, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Horas Jornal", VisibleIndex = 5, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Rendimiento", VisibleIndex = 6, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Cuadrilla", VisibleIndex = 7, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Cantidad", VisibleIndex = 8, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Valor Unitario", VisibleIndex = 9, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Valor Total", VisibleIndex = 10, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Alias", Visible = false }});
             this.treeList1.ContextMenuStrip = null;
             this.treeList1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.treeList1.Location = new System.Drawing.Point(0, 0);
+            this.treeList1.Location = new System.Drawing.Point(0, 40);
             this.treeList1.Name = "treeList1";
             this.treeList1.OptionsBehavior.Editable = false;
             this.treeList1.OptionsView.ShowIndicator = false;
-            this.treeList1.Size = new System.Drawing.Size(900, 500);
+            this.treeList1.Size = new System.Drawing.Size(900, 460);
             this.treeList1.TabIndex = 0;
+            this.treeList1.FocusedNodeChanged += new DevExpress.XtraTreeList.FocusedNodeChangedEventHandler(this.treeList1_FocusedNodeChanged);
             this.treeList1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.treeList1_MouseDown);
             this.treeList1.PopupMenuShowing += new DevExpress.XtraTreeList.PopupMenuShowingEventHandler(this.treeList1_PopupMenuShowing);
             // 
@@ -225,9 +391,13 @@ namespace DevExpressTreeListDemo
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(900, 500);
             this.Controls.Add(this.treeList1);
+            this.Controls.Add(this.topPanel);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "DevExpress XtraTreeList - Demo";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
+            this.topPanel.ResumeLayout(false);
+            this.topPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.treeList1)).EndInit();
             this.emptyContextMenu.ResumeLayout(false);
             this.treeContextMenu.ResumeLayout(false);

@@ -6,8 +6,25 @@ namespace DevExpressTreeListDemo
 {
     internal sealed class TreeListItemService
     {
+        private const int ValueIndexItemCode = 0;
+        private const int ValueIndexResourceType = 1;
+        private const int ValueIndexResource = 2;
+        private const int ValueIndexUnidad = 3;
+        private const int ValueIndexCalculationType = 4;
+        private const int ValueIndexHoursPerDay = 5;
+        private const int ValueIndexPerformance = 6;
+        private const int ValueIndexCrew = 7;
+        private const int ValueIndexQuantity = 8;
+        private const int ValueIndexUnitValue = 9;
+        private const int ValueIndexTotalValue = 10;
+        private const int ValueIndexAlias = 11;
+
+        private static readonly object[] NewNodeDefaults =
+            { string.Empty, null, null, null, null, null, null, null, null, null, null, string.Empty };
+
         private readonly TreeList treeList;
         private ResourceTypePolicy policy;
+        private int itemNumberStart = 1;
 
         public TreeListItemService(TreeList treeList, ResourceTypePolicy policy)
         {
@@ -18,6 +35,12 @@ namespace DevExpressTreeListDemo
         public void SetPolicy(ResourceTypePolicy policy)
         {
             this.policy = policy;
+        }
+
+        public int ItemNumberStart
+        {
+            get => itemNumberStart;
+            set => itemNumberStart = value < 0 ? 0 : value;
         }
 
         public void AddRootItem()
@@ -99,7 +122,21 @@ namespace DevExpressTreeListDemo
         {
             NodeClipboardData data = new NodeClipboardData
             {
-                Values = new object[] { node.GetValue(0), node.GetValue(1), node.GetValue(2), node.GetValue(3) },
+                Values = new object[]
+                {
+                    node.GetValue(ValueIndexItemCode),
+                    node.GetValue(ValueIndexResourceType),
+                    node.GetValue(ValueIndexResource),
+                    node.GetValue(ValueIndexUnidad),
+                    node.GetValue(ValueIndexCalculationType),
+                    node.GetValue(ValueIndexHoursPerDay),
+                    node.GetValue(ValueIndexPerformance),
+                    node.GetValue(ValueIndexCrew),
+                    node.GetValue(ValueIndexQuantity),
+                    node.GetValue(ValueIndexUnitValue),
+                    node.GetValue(ValueIndexTotalValue),
+                    node.GetValue(ValueIndexAlias)
+                },
                 Children = new System.Collections.Generic.List<NodeClipboardData>()
             };
 
@@ -132,12 +169,13 @@ namespace DevExpressTreeListDemo
             }
 
             TreeListNode targetParent = targetNode == null ? null : targetNode.ParentNode;
-            if (!policy.CanBePlacedUnder(targetParent, policy.NormalizeTypeName(data.Values[1])))
+            if (!policy.CanBePlacedUnder(targetParent, policy.NormalizeTypeName(data.Values[ValueIndexResourceType])))
                 return false;
 
             RunUnbound(() =>
             {
-                TreeListNode newNode = AppendNodeFromClipboard(targetParent, data);
+                NodeClipboardData safeData = CloneClipboardData(data);
+                TreeListNode newNode = AppendNodeFromClipboard(targetParent, safeData);
 
                 if (targetNode != null)
                 {
@@ -157,7 +195,7 @@ namespace DevExpressTreeListDemo
             if (selectedNode == null)
                 return false;
 
-            string selectedType = policy.NormalizeTypeName(selectedNode.GetValue(1));
+            string selectedType = policy.NormalizeTypeName(selectedNode.GetValue(ValueIndexResourceType));
             TreeListNode newParent = GetPreviousSibling(selectedNode);
             if (!policy.CanBePlacedUnder(newParent, selectedType))
                 return false;
@@ -168,8 +206,9 @@ namespace DevExpressTreeListDemo
 
             RunUnbound(() =>
             {
-                treeList.IndentNodes(nodes, true);
-                treeList.FocusedNode = selectedNode;
+                TreeListNode movedNode = MoveSubtree(selectedNode, newParent, null);
+                newParent.Expanded = true;
+                treeList.FocusedNode = movedNode;
             });
 
             return true;
@@ -180,19 +219,21 @@ namespace DevExpressTreeListDemo
             if (selectedNode == null)
                 return false;
 
-            string selectedType = policy.NormalizeTypeName(selectedNode.GetValue(1));
-            TreeListNode newParent = selectedNode.ParentNode == null ? null : selectedNode.ParentNode.ParentNode;
-            if (!policy.CanBePlacedUnder(newParent, selectedType))
+            string selectedType = policy.NormalizeTypeName(selectedNode.GetValue(ValueIndexResourceType));
+            TreeListNode currentParent = selectedNode.ParentNode;
+            if (currentParent == null)
                 return false;
 
-            TreeListNode[] nodes = new[] { selectedNode };
-            if (!treeList.CanOutdentNodes(nodes))
+            TreeListNode newParent = currentParent.ParentNode;
+            if (!policy.CanBePlacedUnder(newParent, selectedType))
                 return false;
 
             RunUnbound(() =>
             {
-                treeList.OutdentNodes(nodes, true);
-                treeList.FocusedNode = selectedNode;
+                int newIndex = treeList.GetNodeIndex(currentParent) + 1;
+                TreeListNode movedNode = MoveSubtree(selectedNode, newParent, newIndex);
+                movedNode.Expanded = true;
+                treeList.FocusedNode = movedNode;
             });
 
             return true;
@@ -240,19 +281,19 @@ namespace DevExpressTreeListDemo
         {
             for (int i = 0; i < treeList.Nodes.Count; i++)
             {
-                string rootCode = (i + 1).ToString("D2");
+                string rootCode = (itemNumberStart + i).ToString("D2");
                 AssignNodeCode(treeList.Nodes[i], rootCode);
             }
         }
 
         private object[] CreateNewNodeValues()
         {
-            return new object[] { string.Empty, "Nuevo item", "Item", "Activa" };
+            return (object[])NewNodeDefaults.Clone();
         }
 
         private void AssignNodeCode(TreeListNode node, string code)
         {
-            node.SetValue(0, code);
+            node.SetValue(ValueIndexItemCode, code);
 
             for (int i = 0; i < node.Nodes.Count; i++)
             {
@@ -282,6 +323,35 @@ namespace DevExpressTreeListDemo
                 AppendNodeFromClipboard(node, data.Children[i]);
 
             return node;
+        }
+
+        private TreeListNode MoveSubtree(TreeListNode sourceNode, TreeListNode newParent, int? newIndex)
+        {
+            NodeClipboardData data = CaptureNode(sourceNode);
+            sourceNode.Remove();
+
+            TreeListNode movedNode = AppendNodeFromClipboard(newParent, data);
+            if (newIndex.HasValue)
+                treeList.SetNodeIndex(movedNode, newIndex.Value);
+
+            return movedNode;
+        }
+
+        private NodeClipboardData CloneClipboardData(NodeClipboardData source)
+        {
+            if (source == null)
+                return null;
+
+            NodeClipboardData clone = new NodeClipboardData
+            {
+                Values = (object[])source.Values.Clone(),
+                Children = new System.Collections.Generic.List<NodeClipboardData>()
+            };
+
+            for (int i = 0; i < source.Children.Count; i++)
+                clone.Children.Add(CloneClipboardData(source.Children[i]));
+
+            return clone;
         }
 
         private void RunUnbound(Action action)
