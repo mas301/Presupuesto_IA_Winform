@@ -17,6 +17,17 @@ namespace DevExpressTreeListDemo
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
+
+                // Verificar si ya hay una instancia en ejecución
+                if (System.Diagnostics.Process.GetProcessesByName(System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Length > 1)
+                {
+                    DialogResult result = MessageBox.Show("Ya hay una instancia en ejecución. ¿Desea continuar?", "Advertencia", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    if (result == DialogResult.No)
+                    {
+                        return;
+                    }
+                }
+
                 Application.Run(new MainForm());
             }
             catch (Exception ex)
