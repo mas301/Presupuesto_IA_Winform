@@ -115,11 +115,15 @@ namespace DevExpressTreeListDemo
                 return;
 
             var items = new List<RecursoPresupuestoDto>();
+            var partidaItems = new List<RecursoPartidaDto>();
             int nextId = 1;
             for (int i = 0; i < treeList1.Nodes.Count; i++)
                 CollectBudgetItems(treeList1.Nodes[i], null, 0, i + 1, items, ref nextId);
 
+            CollectPartidaItems(partidaItems);
+
             Datos.GuardarRecursosPresupuesto(EmpresaId, PresupuestoId, items);
+            Datos.GuardarRecursosPartida(EmpresaId, partidaItems);
             hasPendingAutoSaveChanges = false;
             lastAutoSaveUtc = DateTime.UtcNow;
             UpdatePendingSaveIndicator(false);
@@ -227,6 +231,48 @@ namespace DevExpressTreeListDemo
         {
             decimal? parsed = ToNullableDecimal(value);
             return parsed.HasValue ? parsed.Value : 0m;
+        }
+
+        private void CollectPartidaItems(List<RecursoPartidaDto> items)
+        {
+            if (items == null)
+                return;
+
+            var processedPartidaIds = new HashSet<int>();
+            foreach (TreeListNode node in EnumerateAllNodes())
+            {
+                if (!resourceTypePolicy.IsPartida(node))
+                    continue;
+
+                int? partidaId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                if (!partidaId.HasValue || !processedPartidaIds.Add(partidaId.Value))
+                    continue;
+
+                for (int i = 0; i < node.Nodes.Count; i++)
+                {
+                    TreeListNode child = node.Nodes[i];
+                    int? recursoId = ToNullableInt(child.GetValue(ResourceColumnIndex));
+                    if (!recursoId.HasValue)
+                        continue;
+
+                    items.Add(new RecursoPartidaDto
+                    {
+                        EmpresaId = EmpresaId,
+                        PartidaId = partidaId.Value,
+                        RecursoId = recursoId.Value,
+                        TipoCalculoId = ToNullableInt(child.GetValue(CalculationTypeColumnIndex)),
+                        UnidadId = ToNullableInt(child.GetValue(UnitColumnIndex)),
+                        Rendimiento = resourceTypePolicy.IsPartida(child)
+                            ? GetPartidaRendimientoManoObra(child)
+                            : ToNullableDecimal(child.GetValue(PerformanceColumnIndex)),
+                        Cuadrilla = resourceTypePolicy.IsPartida(child)
+                            ? GetPartidaRendimientoEquipos(child)
+                            : ToNullableDecimal(child.GetValue(CrewColumnIndex)),
+                        Cantidad = ToNullableDecimal(child.GetValue(QuantityColumnIndex)) ?? 0m,
+                        Orden = i + 1
+                    });
+                }
+            }
         }
     }
 }

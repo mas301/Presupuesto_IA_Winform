@@ -52,6 +52,7 @@ namespace DevExpressTreeListDemo
 
         private void menuAddAbove_Click(object sender, EventArgs e)
         {
+            ShowSharedPartidaWarningIfNeeded(treeList1.FocusedNode, allowPartidaRootTarget: false);
             treeListItemService.AddAbove(treeList1.FocusedNode);
             RecalculateNumericRules();
             MarkPendingAutoSave();
@@ -59,6 +60,7 @@ namespace DevExpressTreeListDemo
 
         private void menuAddBelow_Click(object sender, EventArgs e)
         {
+            ShowSharedPartidaWarningIfNeeded(treeList1.FocusedNode, allowPartidaRootTarget: false);
             treeListItemService.AddBelow(treeList1.FocusedNode);
             RecalculateNumericRules();
             MarkPendingAutoSave();
@@ -66,6 +68,7 @@ namespace DevExpressTreeListDemo
 
         private void menuAddSubItem_Click(object sender, EventArgs e)
         {
+            ShowSharedPartidaWarningIfNeeded(treeList1.FocusedNode, allowPartidaRootTarget: true);
             if (!treeListItemService.AddSubItem(treeList1.FocusedNode, out string validationMessage))
             {
                 if (!string.IsNullOrEmpty(validationMessage))
@@ -80,6 +83,7 @@ namespace DevExpressTreeListDemo
 
         private void menuDeleteItem_Click(object sender, EventArgs e)
         {
+            ShowSharedPartidaWarningIfNeeded(treeList1.FocusedNode, allowPartidaRootTarget: false);
             treeListItemService.Delete(treeList1.FocusedNode);
             RecalculateNumericRules();
             MarkPendingAutoSave();
@@ -100,6 +104,7 @@ namespace DevExpressTreeListDemo
             if (selectedNode == null)
                 return;
 
+            ShowSharedPartidaWarningIfNeeded(selectedNode, allowPartidaRootTarget: false);
             treeListItemService.Cut(selectedNode, data => clipboardData = data);
             RecalculateNumericRules();
             MarkPendingAutoSave();
@@ -107,6 +112,7 @@ namespace DevExpressTreeListDemo
 
         private void menuPasteItem_Click(object sender, EventArgs e)
         {
+            ShowSharedPartidaWarningIfNeeded(treeList1.FocusedNode, allowPartidaRootTarget: false);
             if (!treeListItemService.Paste(treeList1.FocusedNode, clipboardData, false, out string validationMessage))
             {
                 if (!string.IsNullOrEmpty(validationMessage))
@@ -121,6 +127,7 @@ namespace DevExpressTreeListDemo
 
         private void menuPasteItemBelow_Click(object sender, EventArgs e)
         {
+            ShowSharedPartidaWarningIfNeeded(treeList1.FocusedNode, allowPartidaRootTarget: false);
             if (!treeListItemService.Paste(treeList1.FocusedNode, clipboardData, true, out string validationMessage))
             {
                 if (!string.IsNullOrEmpty(validationMessage))
@@ -555,6 +562,52 @@ namespace DevExpressTreeListDemo
                 return null;
 
             return parent == null ? treeList1.Nodes[index - 1] : parent.Nodes[index - 1];
+        }
+
+        private void ShowSharedPartidaWarningIfNeeded(TreeListNode targetNode, bool allowPartidaRootTarget)
+        {
+            if (targetNode == null)
+                return;
+
+            TreeListNode partidaNode = FindContainingPartidaOrSelf(targetNode);
+            if (partidaNode == null || !resourceTypePolicy.IsPartida(partidaNode))
+                return;
+
+            if (!allowPartidaRootTarget && targetNode == partidaNode)
+                return;
+
+            int? partidaId = ToNullableInt(partidaNode.GetValue(ResourceColumnIndex));
+            if (!partidaId.HasValue)
+                return;
+
+            int usageCount = CountPartidaUsagesInBudget(partidaId.Value);
+            if (usageCount <= 1)
+                return;
+
+            if (!Datos.ExisteRecursosPartida(EmpresaId, partidaId.Value))
+                return;
+
+            MessageBox.Show(
+                "Cualquier cambio que Usted realice sobre esta partida se replicará en todos los lugares de este presupuesto donde se utilice esta misma partida y en el maestro de Partidas, pero si solo desea cambiar esta partida, primero cambie de partida con una duplicada creada con otro nombre.",
+                "Advertencia",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+
+        private int CountPartidaUsagesInBudget(int partidaId)
+        {
+            int count = 0;
+            foreach (TreeListNode node in EnumerateAllNodes())
+            {
+                if (!resourceTypePolicy.IsPartida(node))
+                    continue;
+
+                int? nodePartidaId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                if (nodePartidaId.HasValue && nodePartidaId.Value == partidaId)
+                    count++;
+            }
+
+            return count;
         }
     }
 }

@@ -12,7 +12,6 @@ namespace DevExpressTreeListDemo
     internal sealed class ResourceEditorService
     {
         private const int ResourceTypeColumnIndex = 1;
-        private const int ResourceColumnIndex = 2;
         private const string ResourceTypeIdColumn = "TipoRecursoId";
         private const string ResourceIdColumn = "RecursoId";
         private const string ResourceNameColumn = "Recurso";
@@ -20,6 +19,7 @@ namespace DevExpressTreeListDemo
         private readonly DataTable allResourcesTable;
         private readonly RepositoryItemGridLookUpEdit displayEditor;
         private readonly RepositoryItemGridLookUpEdit editingEditor;
+        private TreeListColumn attachedResourceColumn;
 
         public ResourceEditorService(DataTable allResourcesTable)
         {
@@ -32,6 +32,7 @@ namespace DevExpressTreeListDemo
 
         public void Attach(TreeList treeList, TreeListColumn resourceColumn)
         {
+            attachedResourceColumn = resourceColumn;
             treeList.RepositoryItems.Add(displayEditor);
             treeList.RepositoryItems.Add(editingEditor);
             treeList.CustomNodeCellEditForEditing += TreeList_CustomNodeCellEditForEditing;
@@ -40,7 +41,7 @@ namespace DevExpressTreeListDemo
 
         private void TreeList_CustomNodeCellEditForEditing(object sender, GetCustomNodeCellEditEventArgs e)
         {
-            if (e.Column == null || e.Node == null || e.Column.VisibleIndex != ResourceColumnIndex)
+            if (e.Column == null || e.Node == null || attachedResourceColumn == null || e.Column != attachedResourceColumn)
                 return;
 
             DataTable filteredResources = BuildFilteredResourcesTable(e.Node);

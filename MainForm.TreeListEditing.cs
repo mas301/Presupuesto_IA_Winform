@@ -175,7 +175,14 @@ namespace DevExpressTreeListDemo
                 suppressPersistence = true;
                 try
                 {
-                    int? resourceId = ToNullableInt(e.Node.GetValue(ResourceColumnIndex));
+                    object rawResourceValue = e.Node.GetValue(ResourceColumnIndex);
+                    int? resourceId = ToNullableInt(rawResourceValue);
+                    if (!resourceId.HasValue)
+                    {
+                        resourceId = ResolveResourceIdFromNodeValue(e.Node, rawResourceValue);
+                        if (resourceId.HasValue)
+                            e.Node.SetValue(ResourceColumnIndex, resourceId.Value);
+                    }
 
                     int? unitId = null;
                     if (resourceId.HasValue
@@ -218,10 +225,12 @@ namespace DevExpressTreeListDemo
                             && resourcesById.TryGetValue(resourceId.Value, out RecursoDto resource))
                         {
                             SetPartidaCalculationData(e.Node, resource.Rendimiento, resource.Cuadrilla);
+                            SyncPartidaChildrenFromTemplate(e.Node, resourceId.Value);
                         }
                         else
                         {
                             SetPartidaCalculationData(e.Node, null, null);
+                            SyncPartidaChildrenFromTemplate(e.Node, null);
                         }
                     }
                 }
@@ -266,6 +275,10 @@ namespace DevExpressTreeListDemo
 
             TreeListNode sourcePartida = FindContainingPartidaOrSelf(sourceNode);
             if (sourcePartida == null)
+                return;
+
+            // La cantidad del nodo Partida no se replica entre partidas iguales.
+            if (columnIndex == QuantityColumnIndex && sourceNode == sourcePartida)
                 return;
 
             int? sourcePartidaResourceId = ToNullableInt(sourcePartida.GetValue(ResourceColumnIndex));
@@ -403,6 +416,164 @@ namespace DevExpressTreeListDemo
 
             int? calculationType = ToNullableInt(node.GetValue(CalculationTypeColumnIndex));
             return calculationType.HasValue && calculationType.Value == 4;
+        }
+
+        private int? ResolveResourceIdFromNodeValue(TreeListNode node, object resourceValue)
+        {
+            if (resourcesById == null || resourcesById.Count == 0)
+                return null;
+
+            string typedText = Convert.ToString(resourceValue);
+            if (string.IsNullOrWhiteSpace(typedText))
+                return null;
+
+            typedText = typedText.Trim();
+            int? tipoRecursoId = ToNullableInt(node == null ? null : node.GetValue(ResourceTypeColumnIndex));
+
+            int? matchedId = null;
+            foreach (KeyValuePair<int, RecursoDto> item in resourcesById)
+            {
+                RecursoDto resource = item.Value;
+                if (resource == null)
+                    continue;
+
+                if (!string.Equals(resource.Recurso ?? string.Empty, typedText, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (tipoRecursoId.HasValue && resource.TipoRecursoId != tipoRecursoId.Value)
+                    continue;
+
+                if (matchedId.HasValue)
+                    return null;
+
+                matchedId = item.Key;
+            }
+
+            return matchedId;
+        }
+
+        private void SyncPartidaChildrenFromTemplate(TreeListNode partidaNode, int? partidaResourceId)
+        {
+            if (partidaNode == null || !resourceTypePolicy.IsPartida(partidaNode))
+                return;
+
+            List<RecursoPartidaDto> templateRows = partidaResourceId.HasValue
+                ? Datos.ObtenerRecursosPartida(EmpresaId, partidaResourceId.Value)
+                : new List<RecursoPartidaDto>();
+            Dictionary<int, decimal> sharedUnitValuesByResourceId = BuildEditableUnitValuesOutsidePartida(partidaNode);
+
+            treeList1.BeginUnboundLoad();
+            try
+            {
+                while (partidaNode.Nodes.Count > templateRows.Count)
+                    partidaNode.Nodes[partidaNode.Nodes.Count - 1].Remove();
+
+                for (int i = 0; i < templateRows.Count; i++)
+                {
+                    RecursoPartidaDto template = templateRows[i];
+
+                    TreeListNode child;
+                    if (i < partidaNode.Nodes.Count)
+                    {
+                        child = partidaNode.Nodes[i];
+                    }
+                    else
+                    {
+                        child = treeList1.AppendNode(new object[]
+                        {
+                            string.Empty,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            string.Empty
+                        }, partidaNode);
+                    }
+
+                    int? tipoRecursoId = null;
+                    if (resourcesById != null && resourcesById.TryGetValue(template.RecursoId, out RecursoDto resource))
+                        tipoRecursoId = resource.TipoRecursoId;
+
+                    int? previousResourceId = ToNullableInt(child.GetValue(ResourceColumnIndex));
+                    object previousUnitValue = child.GetValue(UnitValueColumnIndex);
+
+                    child.SetValue(ResourceTypeColumnIndex, tipoRecursoId.HasValue ? (object)tipoRecursoId.Value : null);
+                    child.SetValue(ResourceColumnIndex, template.RecursoId);
+                    child.SetValue(UnitColumnIndex, template.UnidadId.HasValue ? (object)template.UnidadId.Value : null);
+                    child.SetValue(CalculationTypeColumnIndex, template.TipoCalculoId.HasValue ? (object)template.TipoCalculoId.Value : null);
+                    child.SetValue(HoursPerDayColumnIndex, null);
+                    child.SetValue(PerformanceColumnIndex, template.Rendimiento.HasValue ? (object)template.Rendimiento.Value : null);
+                    child.SetValue(CrewColumnIndex, template.Cuadrilla.HasValue ? (object)template.Cuadrilla.Value : null);
+                    child.SetValue(QuantityColumnIndex, template.Cantidad);
+
+                    object unitValueToApply = null;
+                    if (!IsUnitValueAutomaticallyCalculated(child)
+                        && sharedUnitValuesByResourceId.TryGetValue(template.RecursoId, out decimal sharedUnitValue))
+                    {
+                        unitValueToApply = sharedUnitValue;
+                    }
+                    else if (!IsUnitValueAutomaticallyCalculated(child)
+                        && previousResourceId.HasValue
+                        && previousResourceId.Value == template.RecursoId
+                        && previousUnitValue != null)
+                    {
+                        unitValueToApply = previousUnitValue;
+                    }
+
+                    child.SetValue(UnitValueColumnIndex, unitValueToApply);
+                    child.SetValue(TotalValueColumnIndex, null);
+                }
+            }
+            finally
+            {
+                treeList1.EndUnboundLoad();
+            }
+
+            partidaNode.Expanded = true;
+            treeListItemService.AssignItemNumbers();
+        }
+
+        private Dictionary<int, decimal> BuildEditableUnitValuesOutsidePartida(TreeListNode excludedPartidaNode)
+        {
+            var result = new Dictionary<int, decimal>();
+            foreach (TreeListNode node in EnumerateAllNodes())
+            {
+                if (node == null || node == excludedPartidaNode || IsDescendantOf(node, excludedPartidaNode))
+                    continue;
+
+                if (IsUnitValueAutomaticallyCalculated(node))
+                    continue;
+
+                int? resourceId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                decimal? unitValue = ToNullableDecimal(node.GetValue(UnitValueColumnIndex));
+                if (!resourceId.HasValue || !unitValue.HasValue)
+                    continue;
+
+                if (!result.ContainsKey(resourceId.Value))
+                    result.Add(resourceId.Value, unitValue.Value);
+            }
+
+            return result;
+        }
+
+        private static bool IsDescendantOf(TreeListNode node, TreeListNode ancestor)
+        {
+            TreeListNode current = node == null ? null : node.ParentNode;
+            while (current != null)
+            {
+                if (current == ancestor)
+                    return true;
+
+                current = current.ParentNode;
+            }
+
+            return false;
         }
 
     }

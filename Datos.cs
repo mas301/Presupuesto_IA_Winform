@@ -55,6 +55,19 @@ namespace DevExpressTreeListDemo
         public decimal? ValorTotal { get; set; }
     }
 
+    public sealed class RecursoPartidaDto
+    {
+        public int EmpresaId { get; set; }
+        public int PartidaId { get; set; }
+        public int RecursoId { get; set; }
+        public int? TipoCalculoId { get; set; }
+        public int? UnidadId { get; set; }
+        public decimal? Rendimiento { get; set; }
+        public decimal? Cuadrilla { get; set; }
+        public decimal Cantidad { get; set; }
+        public int Orden { get; set; }
+    }
+
     public sealed class TipoCalculoDto
     {
         public int EmpresaId { get; set; }
@@ -375,6 +388,97 @@ WHERE EmpresaId = @EmpresaId;";
             }
 
             return resultado;
+        }
+
+        public static List<RecursoPartidaDto> ObtenerRecursosPartida(int empresaId, int partidaId)
+        {
+            const string sql = @"
+SELECT EmpresaId, PartidaId, RecursoId, TipoCalculoId, UnidadId, Rendimiento, Cuadrilla, Cantidad, Orden
+FROM PreRecursoxPartida
+WHERE EmpresaId = @EmpresaId AND PartidaId = @PartidaId
+ORDER BY Orden;";
+
+            var resultado = new List<RecursoPartidaDto>();
+
+            try
+            {
+                using (var connection = new SqlConnection(ConnectionString))
+                using (var command = new SqlCommand(sql, connection))
+                {
+                    command.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
+                    command.Parameters.Add("@PartidaId", SqlDbType.Int).Value = partidaId;
+
+                    connection.Open();
+                    using (var reader = command.ExecuteReader())
+                    {
+                        int empresaIdOrdinal = reader.GetOrdinal("EmpresaId");
+                        int partidaIdOrdinal = reader.GetOrdinal("PartidaId");
+                        int recursoIdOrdinal = reader.GetOrdinal("RecursoId");
+                        int tipoCalculoIdOrdinal = reader.GetOrdinal("TipoCalculoId");
+                        int unidadIdOrdinal = reader.GetOrdinal("UnidadId");
+                        int rendimientoOrdinal = reader.GetOrdinal("Rendimiento");
+                        int cuadrillaOrdinal = reader.GetOrdinal("Cuadrilla");
+                        int cantidadOrdinal = reader.GetOrdinal("Cantidad");
+                        int ordenOrdinal = reader.GetOrdinal("Orden");
+
+                        while (reader.Read())
+                        {
+                            resultado.Add(new RecursoPartidaDto
+                            {
+                                EmpresaId = reader.GetInt32(empresaIdOrdinal),
+                                PartidaId = reader.GetInt32(partidaIdOrdinal),
+                                RecursoId = reader.GetInt32(recursoIdOrdinal),
+                                TipoCalculoId = reader.IsDBNull(tipoCalculoIdOrdinal) ? (int?)null : reader.GetInt32(tipoCalculoIdOrdinal),
+                                UnidadId = reader.IsDBNull(unidadIdOrdinal) ? (int?)null : reader.GetInt32(unidadIdOrdinal),
+                                Rendimiento = reader.IsDBNull(rendimientoOrdinal) ? (decimal?)null : reader.GetDecimal(rendimientoOrdinal),
+                                Cuadrilla = reader.IsDBNull(cuadrillaOrdinal) ? (decimal?)null : reader.GetDecimal(cuadrillaOrdinal),
+                                Cantidad = reader.IsDBNull(cantidadOrdinal) ? 0m : reader.GetDecimal(cantidadOrdinal),
+                                Orden = reader.GetInt32(ordenOrdinal)
+                            });
+                        }
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new DataException("Error al consultar recursos por partida.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new DataException("Error de operación al consultar recursos por partida.", ex);
+            }
+
+            return resultado;
+        }
+
+        public static bool ExisteRecursosPartida(int empresaId, int partidaId)
+        {
+            const string sql = @"
+SELECT TOP 1 1
+FROM PreRecursoxPartida
+WHERE EmpresaId = @EmpresaId AND PartidaId = @PartidaId;";
+
+            try
+            {
+                using (var connection = new SqlConnection(ConnectionString))
+                using (var command = new SqlCommand(sql, connection))
+                {
+                    command.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
+                    command.Parameters.Add("@PartidaId", SqlDbType.Int).Value = partidaId;
+
+                    connection.Open();
+                    object value = command.ExecuteScalar();
+                    return value != null && value != DBNull.Value;
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new DataException("Error al validar relacion de recursos por partida.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new DataException("Error de operación al validar relacion de recursos por partida.", ex);
+            }
         }
 
         public static decimal? ObtenerHorasJornalPresupuesto(int empresaId, int presupuestoId)
@@ -776,7 +880,6 @@ EXEC sp_executesql
             if (items == null)
                 throw new ArgumentNullException("items");
 
-            const string deleteSql = "DELETE FROM PreRecursoxPresupuesto WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
             const string insertIdentitySql = @"
 INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cuadrilla, Cantidad, ValorUnitario, ValorTotal)
 VALUES (@EmpresaId, @PresupuestoId, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cuadrilla, @Cantidad, @ValorUnitario, @ValorTotal);
@@ -784,6 +887,26 @@ SELECT CAST(SCOPE_IDENTITY() AS int);";
             const string insertRegularSql = @"
 INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, RecursoxPresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cuadrilla, Cantidad, ValorUnitario, ValorTotal)
 VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cuadrilla, @Cantidad, @ValorUnitario, @ValorTotal);";
+            const string updateSql = @"
+UPDATE PreRecursoxPresupuesto
+SET Alias = @Alias,
+    RecursoxPresupuestoPadreId = @PadreId,
+    Orden = @Orden,
+    Nivel = @Nivel,
+    TipoRecursoId = @TipoRecursoId,
+    RecursoId = @RecursoId,
+    UnidadId = @UnidadId,
+    TipoCalculoId = @TipoCalculoId,
+    HorasJornal = @HorasJornal,
+    Rendimiento = @Rendimiento,
+    Cuadrilla = @Cuadrilla,
+    Cantidad = @Cantidad,
+    ValorUnitario = @ValorUnitario,
+    ValorTotal = @ValorTotal
+WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPresupuestoId = @Id;";
+            const string deleteByIdSql = @"
+DELETE FROM PreRecursoxPresupuesto
+WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPresupuestoId = @Id;";
 
             try
             {
@@ -795,14 +918,16 @@ VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @Tipo
                     {
                         bool isIdentity = IsBudgetTableIdentity(connection, transaction);
 
-                        using (var deleteCommand = new SqlCommand(deleteSql, connection, transaction))
-                        {
-                            deleteCommand.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
-                            deleteCommand.Parameters.Add("@PresupuestoId", SqlDbType.Int).Value = presupuestoId;
-                            deleteCommand.ExecuteNonQuery();
-                        }
+                        List<RecursoPresupuestoDto> existingRows = ObtenerRecursosPresupuesto(connection, transaction, empresaId, presupuestoId);
+                        Dictionary<string, RecursoPresupuestoDto> existingByPath = BuildBudgetRowsByPath(existingRows);
+                        Dictionary<int, string> incomingPathsByClientId = BuildBudgetPathsByClientId(items);
+
+                        int nextId = 0;
+                        if (!isIdentity)
+                            nextId = ObtenerSiguienteRecursoPresupuestoId(connection, transaction, empresaId, presupuestoId);
 
                         var dbIdsByClientIds = new Dictionary<int, int>();
+                        var usedDbIds = new HashSet<int>();
 
                         for (int i = 0; i < items.Count; i++)
                         {
@@ -815,7 +940,45 @@ VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @Tipo
                                     parentDbId = dbIdsByClientIds[parentClientId];
                             }
 
-                            int persistedId;
+                            if (!incomingPathsByClientId.TryGetValue(item.RecursoxPresupuestoId, out string currentPath))
+                                continue;
+
+                            if (existingByPath.TryGetValue(currentPath, out RecursoPresupuestoDto existing))
+                            {
+                                int persistedId = existing.RecursoxPresupuestoId;
+                                int? parentId = parentDbId == DBNull.Value ? (int?)null : Convert.ToInt32(parentDbId);
+
+                                if (HasBudgetRowChanges(existing, item, parentId))
+                                {
+                                    using (var updateCommand = new SqlCommand(updateSql, connection, transaction))
+                                    {
+                                        updateCommand.Parameters.Add("@Id", SqlDbType.Int).Value = persistedId;
+                                        updateCommand.Parameters.Add("@PadreId", SqlDbType.Int).Value = parentDbId;
+                                        updateCommand.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
+                                        updateCommand.Parameters.Add("@PresupuestoId", SqlDbType.Int).Value = presupuestoId;
+                                        updateCommand.Parameters.Add("@Alias", SqlDbType.NVarChar, 200).Value = item.Alias ?? string.Empty;
+                                        updateCommand.Parameters.Add("@Orden", SqlDbType.Int).Value = item.Orden;
+                                        updateCommand.Parameters.Add("@Nivel", SqlDbType.Int).Value = item.Nivel;
+                                        updateCommand.Parameters.Add("@TipoRecursoId", SqlDbType.Int).Value = item.TipoRecursoId;
+                                        updateCommand.Parameters.Add("@RecursoId", SqlDbType.Int).Value = item.RecursoId.HasValue ? (object)item.RecursoId.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@UnidadId", SqlDbType.Int).Value = item.UnidadId.HasValue ? (object)item.UnidadId.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = item.TipoCalculoId.HasValue ? (object)item.TipoCalculoId.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@HorasJornal", SqlDbType.Decimal).Value = item.HorasJornal.HasValue ? (object)item.HorasJornal.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal).Value = item.Rendimiento.HasValue ? (object)item.Rendimiento.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal).Value = item.Cuadrilla.HasValue ? (object)item.Cuadrilla.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = item.Cantidad.HasValue ? (object)item.Cantidad.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@ValorUnitario", SqlDbType.Decimal).Value = item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@ValorTotal", SqlDbType.Decimal).Value = item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : DBNull.Value;
+                                        updateCommand.ExecuteNonQuery();
+                                    }
+                                }
+
+                                dbIdsByClientIds[item.RecursoxPresupuestoId] = persistedId;
+                                usedDbIds.Add(persistedId);
+                                continue;
+                            }
+
+                            int newPersistedId;
                             if (isIdentity)
                             {
                                 using (var insertCommand = new SqlCommand(insertIdentitySql, connection, transaction))
@@ -836,14 +999,16 @@ VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @Tipo
                                     insertCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = item.Cantidad.HasValue ? (object)item.Cantidad.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorUnitario", SqlDbType.Decimal).Value = item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorTotal", SqlDbType.Decimal).Value = item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : DBNull.Value;
-                                    persistedId = Convert.ToInt32(insertCommand.ExecuteScalar());
+                                    newPersistedId = Convert.ToInt32(insertCommand.ExecuteScalar());
                                 }
                             }
                             else
                             {
+                                nextId++;
+                                newPersistedId = nextId;
                                 using (var insertCommand = new SqlCommand(insertRegularSql, connection, transaction))
                                 {
-                                    insertCommand.Parameters.Add("@Id", SqlDbType.Int).Value = item.RecursoxPresupuestoId;
+                                    insertCommand.Parameters.Add("@Id", SqlDbType.Int).Value = newPersistedId;
                                     insertCommand.Parameters.Add("@PadreId", SqlDbType.Int).Value = parentDbId;
                                     insertCommand.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
                                     insertCommand.Parameters.Add("@PresupuestoId", SqlDbType.Int).Value = presupuestoId;
@@ -862,11 +1027,25 @@ VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @Tipo
                                     insertCommand.Parameters.Add("@ValorTotal", SqlDbType.Decimal).Value = item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : DBNull.Value;
                                     insertCommand.ExecuteNonQuery();
                                 }
-
-                                persistedId = item.RecursoxPresupuestoId;
                             }
 
-                            dbIdsByClientIds[item.RecursoxPresupuestoId] = persistedId;
+                            dbIdsByClientIds[item.RecursoxPresupuestoId] = newPersistedId;
+                            usedDbIds.Add(newPersistedId);
+                        }
+
+                        for (int i = 0; i < existingRows.Count; i++)
+                        {
+                            RecursoPresupuestoDto existing = existingRows[i];
+                            if (usedDbIds.Contains(existing.RecursoxPresupuestoId))
+                                continue;
+
+                            using (var deleteCommand = new SqlCommand(deleteByIdSql, connection, transaction))
+                            {
+                                deleteCommand.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
+                                deleteCommand.Parameters.Add("@PresupuestoId", SqlDbType.Int).Value = presupuestoId;
+                                deleteCommand.Parameters.Add("@Id", SqlDbType.Int).Value = existing.RecursoxPresupuestoId;
+                                deleteCommand.ExecuteNonQuery();
+                            }
                         }
 
                         transaction.Commit();
@@ -883,6 +1062,129 @@ VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @Tipo
             }
         }
 
+        public static void GuardarRecursosPartida(int empresaId, IList<RecursoPartidaDto> items)
+        {
+            if (items == null)
+                throw new ArgumentNullException("items");
+
+            var filteredItems = new List<RecursoPartidaDto>();
+            var partidaIds = new HashSet<int>();
+            for (int i = 0; i < items.Count; i++)
+            {
+                RecursoPartidaDto item = items[i];
+                if (item == null || item.PartidaId <= 0 || item.RecursoId <= 0)
+                    continue;
+
+                filteredItems.Add(item);
+                partidaIds.Add(item.PartidaId);
+            }
+
+            if (partidaIds.Count == 0)
+                return;
+
+            const string insertSql = @"
+INSERT INTO PreRecursoxPartida (EmpresaId, PartidaId, RecursoId, TipoCalculoId, UnidadId, Rendimiento, Cuadrilla, Cantidad, Orden)
+VALUES (@EmpresaId, @PartidaId, @RecursoId, @TipoCalculoId, @UnidadId, @Rendimiento, @Cuadrilla, @Cantidad, @Orden);";
+            const string updateSql = @"
+UPDATE PreRecursoxPartida
+SET RecursoId = @RecursoId,
+    TipoCalculoId = @TipoCalculoId,
+    UnidadId = @UnidadId,
+    Rendimiento = @Rendimiento,
+    Cuadrilla = @Cuadrilla,
+    Cantidad = @Cantidad
+WHERE RecursoxPartidaId = @RecursoxPartidaId;";
+            const string deleteSql = @"
+DELETE FROM PreRecursoxPartida
+WHERE RecursoxPartidaId = @RecursoxPartidaId;";
+
+            try
+            {
+                using (var connection = new SqlConnection(ConnectionString))
+                {
+                    connection.Open();
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        List<RecursoPartidaStoredRow> existingRows = ObtenerRecursosPartida(connection, transaction, empresaId, partidaIds);
+                        var existingByKey = new Dictionary<string, RecursoPartidaStoredRow>(StringComparer.Ordinal);
+                        for (int i = 0; i < existingRows.Count; i++)
+                        {
+                            RecursoPartidaStoredRow row = existingRows[i];
+                            string key = BuildPartidaKey(row.PartidaId, row.Orden);
+                            existingByKey[key] = row;
+                        }
+
+                        var incomingByKey = new Dictionary<string, RecursoPartidaDto>(StringComparer.Ordinal);
+                        for (int i = 0; i < filteredItems.Count; i++)
+                        {
+                            RecursoPartidaDto row = filteredItems[i];
+                            string key = BuildPartidaKey(row.PartidaId, row.Orden);
+                            incomingByKey[key] = row;
+                        }
+
+                        foreach (KeyValuePair<string, RecursoPartidaDto> entry in incomingByKey)
+                        {
+                            if (existingByKey.TryGetValue(entry.Key, out RecursoPartidaStoredRow existing))
+                            {
+                                if (!HasPartidaRowChanges(existing, entry.Value))
+                                    continue;
+
+                                using (var updateCommand = new SqlCommand(updateSql, connection, transaction))
+                                {
+                                    updateCommand.Parameters.Add("@RecursoxPartidaId", SqlDbType.Int).Value = existing.RecursoxPartidaId;
+                                    updateCommand.Parameters.Add("@RecursoId", SqlDbType.Int).Value = entry.Value.RecursoId;
+                                    updateCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = entry.Value.TipoCalculoId.HasValue ? (object)entry.Value.TipoCalculoId.Value : DBNull.Value;
+                                    updateCommand.Parameters.Add("@UnidadId", SqlDbType.Int).Value = entry.Value.UnidadId.HasValue ? (object)entry.Value.UnidadId.Value : DBNull.Value;
+                                    updateCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal).Value = entry.Value.Rendimiento.HasValue ? (object)entry.Value.Rendimiento.Value : DBNull.Value;
+                                    updateCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal).Value = entry.Value.Cuadrilla.HasValue ? (object)entry.Value.Cuadrilla.Value : DBNull.Value;
+                                    updateCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = entry.Value.Cantidad;
+                                    updateCommand.ExecuteNonQuery();
+                                }
+
+                                continue;
+                            }
+
+                            using (var insertCommand = new SqlCommand(insertSql, connection, transaction))
+                            {
+                                insertCommand.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
+                                insertCommand.Parameters.Add("@PartidaId", SqlDbType.Int).Value = entry.Value.PartidaId;
+                                insertCommand.Parameters.Add("@RecursoId", SqlDbType.Int).Value = entry.Value.RecursoId;
+                                insertCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = entry.Value.TipoCalculoId.HasValue ? (object)entry.Value.TipoCalculoId.Value : DBNull.Value;
+                                insertCommand.Parameters.Add("@UnidadId", SqlDbType.Int).Value = entry.Value.UnidadId.HasValue ? (object)entry.Value.UnidadId.Value : DBNull.Value;
+                                insertCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal).Value = entry.Value.Rendimiento.HasValue ? (object)entry.Value.Rendimiento.Value : DBNull.Value;
+                                insertCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal).Value = entry.Value.Cuadrilla.HasValue ? (object)entry.Value.Cuadrilla.Value : DBNull.Value;
+                                insertCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = entry.Value.Cantidad;
+                                insertCommand.Parameters.Add("@Orden", SqlDbType.Int).Value = entry.Value.Orden;
+                                insertCommand.ExecuteNonQuery();
+                            }
+                        }
+
+                        foreach (KeyValuePair<string, RecursoPartidaStoredRow> entry in existingByKey)
+                        {
+                            if (incomingByKey.ContainsKey(entry.Key))
+                                continue;
+
+                            using (var deleteCommand = new SqlCommand(deleteSql, connection, transaction))
+                            {
+                                deleteCommand.Parameters.Add("@RecursoxPartidaId", SqlDbType.Int).Value = entry.Value.RecursoxPartidaId;
+                                deleteCommand.ExecuteNonQuery();
+                            }
+                        }
+
+                        transaction.Commit();
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new DataException("Error al guardar relacion de recursos por partida.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new DataException("Error de operación al guardar relacion de recursos por partida.", ex);
+            }
+        }
+
         private static bool IsBudgetTableIdentity(SqlConnection connection, SqlTransaction transaction)
         {
             const string sql = @"
@@ -893,6 +1195,288 @@ SELECT COLUMNPROPERTY(OBJECT_ID('PreRecursoxPresupuesto'), 'RecursoxPresupuestoI
                 object value = command.ExecuteScalar();
                 return value != null && value != DBNull.Value && Convert.ToInt32(value) == 1;
             }
+        }
+
+        private sealed class RecursoPartidaStoredRow
+        {
+            public int RecursoxPartidaId { get; set; }
+            public int PartidaId { get; set; }
+            public int RecursoId { get; set; }
+            public int? TipoCalculoId { get; set; }
+            public int? UnidadId { get; set; }
+            public decimal? Rendimiento { get; set; }
+            public decimal? Cuadrilla { get; set; }
+            public decimal Cantidad { get; set; }
+            public int Orden { get; set; }
+        }
+
+        private static List<RecursoPresupuestoDto> ObtenerRecursosPresupuesto(SqlConnection connection, SqlTransaction transaction, int empresaId, int presupuestoId)
+        {
+            const string sql = @"
+SELECT EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoId, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cuadrilla, Cantidad, ValorUnitario, ValorTotal
+FROM PreRecursoxPresupuesto
+WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
+
+            var result = new List<RecursoPresupuestoDto>();
+            using (var command = new SqlCommand(sql, connection, transaction))
+            {
+                command.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
+                command.Parameters.Add("@PresupuestoId", SqlDbType.Int).Value = presupuestoId;
+
+                using (var reader = command.ExecuteReader())
+                {
+                    int aliasOrdinal = TryGetOrdinal(reader, "Alias");
+                    int idOrdinal = reader.GetOrdinal("RecursoxPresupuestoId");
+                    int parentIdOrdinal = reader.GetOrdinal("RecursoxPresupuestoPadreId");
+                    int orderOrdinal = reader.GetOrdinal("Orden");
+                    int levelOrdinal = reader.GetOrdinal("Nivel");
+                    int resourceTypeIdOrdinal = reader.GetOrdinal("TipoRecursoId");
+                    int resourceIdOrdinal = reader.GetOrdinal("RecursoId");
+                    int unidadIdOrdinal = TryGetOrdinal(reader, "UnidadId");
+                    int tipoCalculoIdOrdinal = reader.GetOrdinal("TipoCalculoId");
+                    int horasJornalOrdinal = reader.GetOrdinal("HorasJornal");
+                    int rendimientoOrdinal = reader.GetOrdinal("Rendimiento");
+                    int cuadrillaOrdinal = reader.GetOrdinal("Cuadrilla");
+                    int cantidadOrdinal = reader.GetOrdinal("Cantidad");
+                    int valorUnitarioOrdinal = reader.GetOrdinal("ValorUnitario");
+                    int valorTotalOrdinal = reader.GetOrdinal("ValorTotal");
+
+                    while (reader.Read())
+                    {
+                        result.Add(new RecursoPresupuestoDto
+                        {
+                            EmpresaId = empresaId,
+                            PresupuestoId = presupuestoId,
+                            Alias = aliasOrdinal >= 0 && !reader.IsDBNull(aliasOrdinal)
+                                ? Convert.ToString(reader.GetValue(aliasOrdinal))
+                                : string.Empty,
+                            RecursoxPresupuestoId = reader.GetInt32(idOrdinal),
+                            RecursoxPresupuestoPadreId = reader.IsDBNull(parentIdOrdinal) ? (int?)null : reader.GetInt32(parentIdOrdinal),
+                            Orden = reader.GetInt32(orderOrdinal),
+                            Nivel = reader.GetInt32(levelOrdinal),
+                            TipoRecursoId = reader.GetInt32(resourceTypeIdOrdinal),
+                            RecursoId = reader.IsDBNull(resourceIdOrdinal) ? (int?)null : reader.GetInt32(resourceIdOrdinal),
+                            UnidadId = unidadIdOrdinal >= 0 && !reader.IsDBNull(unidadIdOrdinal)
+                                ? (int?)reader.GetInt32(unidadIdOrdinal)
+                                : null,
+                            TipoCalculoId = reader.IsDBNull(tipoCalculoIdOrdinal) ? (int?)null : reader.GetInt32(tipoCalculoIdOrdinal),
+                            HorasJornal = reader.IsDBNull(horasJornalOrdinal) ? (decimal?)null : reader.GetDecimal(horasJornalOrdinal),
+                            Rendimiento = reader.IsDBNull(rendimientoOrdinal) ? (decimal?)null : reader.GetDecimal(rendimientoOrdinal),
+                            Cuadrilla = reader.IsDBNull(cuadrillaOrdinal) ? (decimal?)null : reader.GetDecimal(cuadrillaOrdinal),
+                            Cantidad = reader.IsDBNull(cantidadOrdinal) ? (decimal?)null : reader.GetDecimal(cantidadOrdinal),
+                            ValorUnitario = reader.IsDBNull(valorUnitarioOrdinal) ? (decimal?)null : reader.GetDecimal(valorUnitarioOrdinal),
+                            ValorTotal = reader.IsDBNull(valorTotalOrdinal) ? (decimal?)null : reader.GetDecimal(valorTotalOrdinal)
+                        });
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static int ObtenerSiguienteRecursoPresupuestoId(SqlConnection connection, SqlTransaction transaction, int empresaId, int presupuestoId)
+        {
+            const string sql = @"
+SELECT ISNULL(MAX(RecursoxPresupuestoId), 0)
+FROM PreRecursoxPresupuesto
+WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
+
+            using (var command = new SqlCommand(sql, connection, transaction))
+            {
+                command.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
+                command.Parameters.Add("@PresupuestoId", SqlDbType.Int).Value = presupuestoId;
+                return Convert.ToInt32(command.ExecuteScalar());
+            }
+        }
+
+        private static Dictionary<string, RecursoPresupuestoDto> BuildBudgetRowsByPath(IList<RecursoPresupuestoDto> rows)
+        {
+            var rowsById = new Dictionary<int, RecursoPresupuestoDto>();
+            var childrenByParentId = new Dictionary<int, List<RecursoPresupuestoDto>>();
+            for (int i = 0; i < rows.Count; i++)
+            {
+                RecursoPresupuestoDto row = rows[i];
+                rowsById[row.RecursoxPresupuestoId] = row;
+
+                int parentId = row.RecursoxPresupuestoPadreId ?? 0;
+                if (!childrenByParentId.TryGetValue(parentId, out List<RecursoPresupuestoDto> siblings))
+                {
+                    siblings = new List<RecursoPresupuestoDto>();
+                    childrenByParentId[parentId] = siblings;
+                }
+
+                siblings.Add(row);
+            }
+
+            foreach (KeyValuePair<int, List<RecursoPresupuestoDto>> entry in childrenByParentId)
+                entry.Value.Sort((a, b) => CompareByOrderThenId(a.Orden, b.Orden, a.RecursoxPresupuestoId, b.RecursoxPresupuestoId));
+
+            var result = new Dictionary<string, RecursoPresupuestoDto>(StringComparer.Ordinal);
+            BuildBudgetPathsRecursive(childrenByParentId, 0, string.Empty, result);
+            return result;
+        }
+
+        private static Dictionary<int, string> BuildBudgetPathsByClientId(IList<RecursoPresupuestoDto> items)
+        {
+            var childrenByParentId = new Dictionary<int, List<RecursoPresupuestoDto>>();
+            for (int i = 0; i < items.Count; i++)
+            {
+                RecursoPresupuestoDto item = items[i];
+                int parentId = item.RecursoxPresupuestoPadreId ?? 0;
+                if (!childrenByParentId.TryGetValue(parentId, out List<RecursoPresupuestoDto> siblings))
+                {
+                    siblings = new List<RecursoPresupuestoDto>();
+                    childrenByParentId[parentId] = siblings;
+                }
+
+                siblings.Add(item);
+            }
+
+            foreach (KeyValuePair<int, List<RecursoPresupuestoDto>> entry in childrenByParentId)
+                entry.Value.Sort((a, b) => CompareByOrderThenId(a.Orden, b.Orden, a.RecursoxPresupuestoId, b.RecursoxPresupuestoId));
+
+            var result = new Dictionary<int, string>();
+            BuildIncomingBudgetPathsRecursive(childrenByParentId, 0, string.Empty, result);
+            return result;
+        }
+
+        private static void BuildBudgetPathsRecursive(
+            IDictionary<int, List<RecursoPresupuestoDto>> childrenByParentId,
+            int parentId,
+            string parentPath,
+            IDictionary<string, RecursoPresupuestoDto> result)
+        {
+            if (!childrenByParentId.TryGetValue(parentId, out List<RecursoPresupuestoDto> children))
+                return;
+
+            for (int i = 0; i < children.Count; i++)
+            {
+                RecursoPresupuestoDto child = children[i];
+                string path = string.IsNullOrEmpty(parentPath)
+                    ? child.Orden.ToString()
+                    : parentPath + "." + child.Orden.ToString();
+
+                result[path] = child;
+                BuildBudgetPathsRecursive(childrenByParentId, child.RecursoxPresupuestoId, path, result);
+            }
+        }
+
+        private static void BuildIncomingBudgetPathsRecursive(
+            IDictionary<int, List<RecursoPresupuestoDto>> childrenByParentId,
+            int parentId,
+            string parentPath,
+            IDictionary<int, string> result)
+        {
+            if (!childrenByParentId.TryGetValue(parentId, out List<RecursoPresupuestoDto> children))
+                return;
+
+            for (int i = 0; i < children.Count; i++)
+            {
+                RecursoPresupuestoDto child = children[i];
+                string path = string.IsNullOrEmpty(parentPath)
+                    ? child.Orden.ToString()
+                    : parentPath + "." + child.Orden.ToString();
+
+                result[child.RecursoxPresupuestoId] = path;
+                BuildIncomingBudgetPathsRecursive(childrenByParentId, child.RecursoxPresupuestoId, path, result);
+            }
+        }
+
+        private static int CompareByOrderThenId(int orderA, int orderB, int idA, int idB)
+        {
+            int orderCompare = orderA.CompareTo(orderB);
+            if (orderCompare != 0)
+                return orderCompare;
+
+            return idA.CompareTo(idB);
+        }
+
+        private static bool HasBudgetRowChanges(RecursoPresupuestoDto existing, RecursoPresupuestoDto incoming, int? parentId)
+        {
+            return !string.Equals(existing.Alias ?? string.Empty, incoming.Alias ?? string.Empty, StringComparison.Ordinal)
+                || existing.RecursoxPresupuestoPadreId != parentId
+                || existing.Orden != incoming.Orden
+                || existing.Nivel != incoming.Nivel
+                || existing.TipoRecursoId != incoming.TipoRecursoId
+                || existing.RecursoId != incoming.RecursoId
+                || existing.UnidadId != incoming.UnidadId
+                || existing.TipoCalculoId != incoming.TipoCalculoId
+                || existing.HorasJornal != incoming.HorasJornal
+                || existing.Rendimiento != incoming.Rendimiento
+                || existing.Cuadrilla != incoming.Cuadrilla
+                || existing.Cantidad != incoming.Cantidad
+                || existing.ValorUnitario != incoming.ValorUnitario
+                || existing.ValorTotal != incoming.ValorTotal;
+        }
+
+        private static List<RecursoPartidaStoredRow> ObtenerRecursosPartida(SqlConnection connection, SqlTransaction transaction, int empresaId, HashSet<int> partidaIds)
+        {
+            var result = new List<RecursoPartidaStoredRow>();
+            var ids = new List<int>(partidaIds);
+
+            var sql = "SELECT RecursoxPartidaId, PartidaId, RecursoId, TipoCalculoId, UnidadId, Rendimiento, Cuadrilla, Cantidad, Orden FROM PreRecursoxPartida WHERE EmpresaId = @EmpresaId AND PartidaId IN (";
+            for (int i = 0; i < ids.Count; i++)
+            {
+                if (i > 0)
+                    sql += ",";
+
+                sql += "@PartidaId" + i.ToString();
+            }
+
+            sql += ");";
+
+            using (var command = new SqlCommand(sql, connection, transaction))
+            {
+                command.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
+                for (int i = 0; i < ids.Count; i++)
+                    command.Parameters.Add("@PartidaId" + i.ToString(), SqlDbType.Int).Value = ids[i];
+
+                using (var reader = command.ExecuteReader())
+                {
+                    int idOrdinal = reader.GetOrdinal("RecursoxPartidaId");
+                    int partidaIdOrdinal = reader.GetOrdinal("PartidaId");
+                    int recursoIdOrdinal = reader.GetOrdinal("RecursoId");
+                    int tipoCalculoIdOrdinal = reader.GetOrdinal("TipoCalculoId");
+                    int unidadIdOrdinal = reader.GetOrdinal("UnidadId");
+                    int rendimientoOrdinal = reader.GetOrdinal("Rendimiento");
+                    int cuadrillaOrdinal = reader.GetOrdinal("Cuadrilla");
+                    int cantidadOrdinal = reader.GetOrdinal("Cantidad");
+                    int ordenOrdinal = reader.GetOrdinal("Orden");
+
+                    while (reader.Read())
+                    {
+                        result.Add(new RecursoPartidaStoredRow
+                        {
+                            RecursoxPartidaId = reader.GetInt32(idOrdinal),
+                            PartidaId = reader.GetInt32(partidaIdOrdinal),
+                            RecursoId = reader.GetInt32(recursoIdOrdinal),
+                            TipoCalculoId = reader.IsDBNull(tipoCalculoIdOrdinal) ? (int?)null : reader.GetInt32(tipoCalculoIdOrdinal),
+                            UnidadId = reader.IsDBNull(unidadIdOrdinal) ? (int?)null : reader.GetInt32(unidadIdOrdinal),
+                            Rendimiento = reader.IsDBNull(rendimientoOrdinal) ? (decimal?)null : reader.GetDecimal(rendimientoOrdinal),
+                            Cuadrilla = reader.IsDBNull(cuadrillaOrdinal) ? (decimal?)null : reader.GetDecimal(cuadrillaOrdinal),
+                            Cantidad = reader.GetDecimal(cantidadOrdinal),
+                            Orden = reader.GetInt32(ordenOrdinal)
+                        });
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static string BuildPartidaKey(int partidaId, int orden)
+        {
+            return partidaId.ToString() + "|" + orden.ToString();
+        }
+
+        private static bool HasPartidaRowChanges(RecursoPartidaStoredRow existing, RecursoPartidaDto incoming)
+        {
+            return existing.RecursoId != incoming.RecursoId
+                || existing.TipoCalculoId != incoming.TipoCalculoId
+                || existing.UnidadId != incoming.UnidadId
+                || existing.Rendimiento != incoming.Rendimiento
+                || existing.Cuadrilla != incoming.Cuadrilla
+                || existing.Cantidad != incoming.Cantidad;
         }
 
         private static int TryGetOrdinal(SqlDataReader reader, params string[] columnNames)
