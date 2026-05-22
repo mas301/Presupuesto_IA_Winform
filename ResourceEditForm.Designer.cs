@@ -17,6 +17,7 @@ namespace DevExpressTreeListDemo
         private System.Windows.Forms.NumericUpDown nudRendimientoManoObra;
         private System.Windows.Forms.Label lblRendimientoEquipos;
         private System.Windows.Forms.NumericUpDown nudRendimientoEquipos;
+        private System.Windows.Forms.Button btnCrear;
         private System.Windows.Forms.Button btnGrabar;
         private System.Windows.Forms.Button btnCancelar;
 
@@ -45,6 +46,7 @@ namespace DevExpressTreeListDemo
             this.nudRendimientoManoObra = new System.Windows.Forms.NumericUpDown();
             this.lblRendimientoEquipos = new System.Windows.Forms.Label();
             this.nudRendimientoEquipos = new System.Windows.Forms.NumericUpDown();
+            this.btnCrear = new System.Windows.Forms.Button();
             this.btnGrabar = new System.Windows.Forms.Button();
             this.btnCancelar = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.nudRendimientoManoObra)).BeginInit();
@@ -87,6 +89,7 @@ namespace DevExpressTreeListDemo
             this.txtRecurso.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtRecurso.Size = new System.Drawing.Size(320, 52);
             this.txtRecurso.TabIndex = 3;
+            this.txtRecurso.TextChanged += new System.EventHandler(this.txtRecurso_TextChanged);
             this.txtRecurso.Leave += new System.EventHandler(this.txtRecurso_Leave);
             // 
             // lblAlias
@@ -188,12 +191,23 @@ namespace DevExpressTreeListDemo
             this.nudRendimientoEquipos.Size = new System.Drawing.Size(320, 20);
             this.nudRendimientoEquipos.TabIndex = 13;
             // 
+            // btnCrear
+            // 
+            this.btnCrear.Enabled = false;
+            this.btnCrear.Location = new System.Drawing.Point(102, 425);
+            this.btnCrear.Name = "btnCrear";
+            this.btnCrear.Size = new System.Drawing.Size(75, 28);
+            this.btnCrear.TabIndex = 14;
+            this.btnCrear.Text = "Crear";
+            this.btnCrear.UseVisualStyleBackColor = true;
+            this.btnCrear.Click += new System.EventHandler(this.btnCrear_Click);
+            // 
             // btnGrabar
             // 
             this.btnGrabar.Location = new System.Drawing.Point(183, 425);
             this.btnGrabar.Name = "btnGrabar";
             this.btnGrabar.Size = new System.Drawing.Size(75, 28);
-            this.btnGrabar.TabIndex = 14;
+            this.btnGrabar.TabIndex = 15;
             this.btnGrabar.Text = "Grabar";
             this.btnGrabar.UseVisualStyleBackColor = true;
             this.btnGrabar.Click += new System.EventHandler(this.btnGrabar_Click);
@@ -203,7 +217,7 @@ namespace DevExpressTreeListDemo
             this.btnCancelar.Location = new System.Drawing.Point(264, 425);
             this.btnCancelar.Name = "btnCancelar";
             this.btnCancelar.Size = new System.Drawing.Size(75, 28);
-            this.btnCancelar.TabIndex = 15;
+            this.btnCancelar.TabIndex = 16;
             this.btnCancelar.Text = "Cancelar";
             this.btnCancelar.UseVisualStyleBackColor = true;
             this.btnCancelar.Click += new System.EventHandler(this.btnCancelar_Click);
@@ -213,6 +227,7 @@ namespace DevExpressTreeListDemo
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(360, 469);
+            this.Controls.Add(this.btnCrear);
             this.Controls.Add(this.btnCancelar);
             this.Controls.Add(this.btnGrabar);
             this.Controls.Add(this.nudRendimientoEquipos);

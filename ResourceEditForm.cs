@@ -12,7 +12,10 @@ namespace DevExpressTreeListDemo
         private readonly IList<RecursoDto> resources;
         private readonly IList<UnidadDto> units;
         private readonly IList<TipoCalculoDto> calculationTypes;
+        private readonly bool requireTypeAndResource;
+        private readonly bool allowCreateFromNameChange;
         private List<RecursoDto> filteredResources;
+        private string originalRecursoTextoNormalized;
 
         public int? SelectedTipoRecursoId { get; private set; }
         public int? SelectedRecursoId { get; private set; }
@@ -22,6 +25,7 @@ namespace DevExpressTreeListDemo
         public string RecursoTexto { get; private set; }
         public decimal? RendimientoManoObra { get; private set; }
         public decimal? RendimientoEquipos { get; private set; }
+        public bool CreateNewResourceRequested { get; private set; }
 
         public ResourceEditForm(
             IList<TipoRecursoDto> resourceTypes,
@@ -35,12 +39,16 @@ namespace DevExpressTreeListDemo
             string initialAlias,
             decimal? initialRendimientoManoObra,
             decimal? initialRendimientoEquipos,
-            bool startBlank)
+            bool startBlank,
+            bool requireTypeAndResource,
+            bool allowCreateFromNameChange)
         {
             this.resourceTypes = resourceTypes ?? new List<TipoRecursoDto>();
             this.resources = resources ?? new List<RecursoDto>();
             this.units = units ?? new List<UnidadDto>();
             this.calculationTypes = calculationTypes ?? new List<TipoCalculoDto>();
+            this.requireTypeAndResource = requireTypeAndResource;
+            this.allowCreateFromNameChange = allowCreateFromNameChange;
 
             InitializeComponent();
             LoadLookups();
@@ -128,6 +136,9 @@ namespace DevExpressTreeListDemo
             decimal? initialRendimientoEquipos,
             bool startBlank)
         {
+            btnCrear.Visible = allowCreateFromNameChange && !startBlank;
+            btnCrear.Enabled = false;
+
             if (startBlank)
             {
                 cmbTipoRecurso.SelectedIndex = 0;
@@ -139,6 +150,7 @@ namespace DevExpressTreeListDemo
                 txtAlias.Text = string.Empty;
                 nudRendimientoManoObra.Value = 0m;
                 nudRendimientoEquipos.Value = 0m;
+                originalRecursoTextoNormalized = string.Empty;
                 UpdateFieldVisibilityByResourceType();
                 return;
             }
@@ -160,6 +172,7 @@ namespace DevExpressTreeListDemo
                 txtRecurso.Text = string.Empty;
             }
             RecursoTexto = txtRecurso.Text;
+            originalRecursoTextoNormalized = NormalizeResourceInput(txtRecurso.Text);
 
             if (initialUnidadId.HasValue)
                 cmbUnidad.SelectedValue = initialUnidadId.Value;
@@ -177,6 +190,7 @@ namespace DevExpressTreeListDemo
             nudRendimientoEquipos.Value = NormalizeDecimal(initialRendimientoEquipos);
 
             UpdateFieldVisibilityByResourceType();
+            UpdateCreateButtonState();
         }
 
         private static decimal NormalizeDecimal(decimal? value)
@@ -199,6 +213,7 @@ namespace DevExpressTreeListDemo
             ApplyResourceFilter();
             TryApplyUnitFromResourceText();
             UpdateFieldVisibilityByResourceType();
+            UpdateCreateButtonState();
         }
 
         private void ApplyResourceFilter()
@@ -232,6 +247,12 @@ namespace DevExpressTreeListDemo
         {
             txtRecurso.Text = NormalizeResourceInput(txtRecurso.Text);
             TryApplyUnitFromResourceText();
+            UpdateCreateButtonState();
+        }
+
+        private void txtRecurso_TextChanged(object sender, EventArgs e)
+        {
+            UpdateCreateButtonState();
         }
 
         private void txtAlias_Leave(object sender, EventArgs e)
@@ -261,6 +282,21 @@ namespace DevExpressTreeListDemo
             string recursoTexto = recursoTextoNormalizado;
             RecursoTexto = string.Equals(recursoTexto, "Ninguno", StringComparison.OrdinalIgnoreCase) ? string.Empty : recursoTexto;
 
+            if (requireTypeAndResource)
+            {
+                if (!SelectedTipoRecursoId.HasValue)
+                {
+                    MessageBox.Show("Seleccione un Tipo Recurso valido.", "Crear recurso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(RecursoTexto))
+                {
+                    MessageBox.Show("Ingrese el nombre del recurso.", "Crear recurso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+
             if (isSubpresupuesto)
             {
                 SelectedUnidadId = null;
@@ -289,6 +325,69 @@ namespace DevExpressTreeListDemo
                 RendimientoManoObra = null;
                 RendimientoEquipos = null;
             }
+
+            CreateNewResourceRequested = false;
+
+            DialogResult = DialogResult.OK;
+            Close();
+        }
+
+        private void btnCrear_Click(object sender, EventArgs e)
+        {
+            SelectedTipoRecursoId = cmbTipoRecurso.SelectedValue as int?;
+            if (!SelectedTipoRecursoId.HasValue)
+                SelectedTipoRecursoId = ParseNullableInt(cmbTipoRecurso.SelectedValue);
+
+            string recursoTexto = NormalizeResourceInput(txtRecurso.Text);
+            RecursoTexto = string.Equals(recursoTexto, "Ninguno", StringComparison.OrdinalIgnoreCase) ? string.Empty : recursoTexto;
+
+            if (!SelectedTipoRecursoId.HasValue)
+            {
+                MessageBox.Show("Seleccione un Tipo Recurso valido.", "Crear recurso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(RecursoTexto))
+            {
+                MessageBox.Show("Ingrese el nombre del recurso.", "Crear recurso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            bool isSubpresupuesto = IsSelectedType("Subpresupuesto");
+            bool isPartida = IsSelectedType("Partida");
+
+            SelectedRecursoId = null;
+
+            if (isSubpresupuesto)
+            {
+                SelectedUnidadId = null;
+                SelectedTipoCalculoId = null;
+            }
+            else
+            {
+                SelectedUnidadId = cmbUnidad.SelectedValue as int?;
+                if (!SelectedUnidadId.HasValue)
+                    SelectedUnidadId = ParseNullableInt(cmbUnidad.SelectedValue);
+
+                SelectedTipoCalculoId = cmbTipoCalculo.SelectedValue as int?;
+                if (!SelectedTipoCalculoId.HasValue)
+                    SelectedTipoCalculoId = ParseNullableInt(cmbTipoCalculo.SelectedValue);
+            }
+
+            Alias = NormalizeResourceInput(txtAlias.Text);
+
+            if (isPartida)
+            {
+                RendimientoManoObra = nudRendimientoManoObra.Value;
+                RendimientoEquipos = nudRendimientoEquipos.Value;
+            }
+            else
+            {
+                RendimientoManoObra = null;
+                RendimientoEquipos = null;
+            }
+
+            CreateNewResourceRequested = true;
 
             DialogResult = DialogResult.OK;
             Close();
@@ -333,7 +432,21 @@ namespace DevExpressTreeListDemo
             if (selectedType == null)
                 return false;
 
-            return string.Equals(selectedType.TipoRecurso, typeName, StringComparison.OrdinalIgnoreCase);
+            return string.Equals(
+                NormalizeTypeName(selectedType.TipoRecurso),
+                NormalizeTypeName(typeName),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeTypeName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            return value.Replace(" ", string.Empty)
+                .Replace("_", string.Empty)
+                .Replace("-", string.Empty)
+                .Trim();
         }
 
         private sealed class ResourceTypeOption
@@ -368,6 +481,23 @@ namespace DevExpressTreeListDemo
 
             string normalized = value.Replace("\r\n", " ").Replace('\n', ' ').Replace('\r', ' ');
             return normalized.Trim();
+        }
+
+        private void UpdateCreateButtonState()
+        {
+            if (btnCrear == null)
+                return;
+
+            if (!btnCrear.Visible)
+            {
+                btnCrear.Enabled = false;
+                return;
+            }
+
+            string current = NormalizeResourceInput(txtRecurso.Text);
+            bool hasValidName = !string.IsNullOrWhiteSpace(current) && !string.Equals(current, "Ninguno", StringComparison.OrdinalIgnoreCase);
+            bool changed = !string.Equals(current, originalRecursoTextoNormalized ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            btnCrear.Enabled = hasValidName && changed;
         }
 
         private sealed class UnidadDisplayItem

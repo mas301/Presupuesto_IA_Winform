@@ -20,6 +20,10 @@ namespace DevExpressTreeListDemo
         public int TipoRecursoId { get; set; }
         public string Recurso { get; set; }
         public int? UnidadId { get; set; }
+        public int? TipoCalculoId { get; set; }
+        public string Alias { get; set; }
+        public decimal? Rendimiento { get; set; }
+        public decimal? Cuadrilla { get; set; }
     }
 
     public sealed class UnidadDto
@@ -113,7 +117,7 @@ ORDER BY OrdenVisual, TipoRecurso;";
         public static List<RecursoDto> ObtenerRecursos(int empresaId)
         {
             const string sql = @"
-SELECT EmpresaId, RecursoId, TipoRecursoId, Recurso, UnidadId
+SELECT *
 FROM PreRecurso
 WHERE EmpresaId = @EmpresaId
 ORDER BY Recurso;";
@@ -136,6 +140,10 @@ ORDER BY Recurso;";
                         int tipoRecursoIdOrdinal = reader.GetOrdinal("TipoRecursoId");
                         int recursoOrdinal = reader.GetOrdinal("Recurso");
                         int unidadIdOrdinal = reader.GetOrdinal("UnidadId");
+                        int tipoCalculoIdOrdinal = TryGetOrdinal(reader, "TipoCalculoId");
+                        int aliasOrdinal = TryGetOrdinal(reader, "Alias");
+                        int rendimientoOrdinal = TryGetOrdinal(reader, "Rendimiento", "RendimientoManoObra");
+                        int cuadrillaOrdinal = TryGetOrdinal(reader, "Cuadrilla", "RendimientoEquipos");
 
                         while (reader.Read())
                         {
@@ -145,7 +153,19 @@ ORDER BY Recurso;";
                                 RecursoId = reader.GetInt32(recursoIdOrdinal),
                                 TipoRecursoId = reader.GetInt32(tipoRecursoIdOrdinal),
                                 Recurso = reader.IsDBNull(recursoOrdinal) ? string.Empty : reader.GetString(recursoOrdinal),
-                                UnidadId = reader.IsDBNull(unidadIdOrdinal) ? (int?)null : reader.GetInt32(unidadIdOrdinal)
+                                UnidadId = reader.IsDBNull(unidadIdOrdinal) ? (int?)null : reader.GetInt32(unidadIdOrdinal),
+                                TipoCalculoId = tipoCalculoIdOrdinal >= 0 && !reader.IsDBNull(tipoCalculoIdOrdinal)
+                                    ? (int?)Convert.ToInt32(reader.GetValue(tipoCalculoIdOrdinal))
+                                    : null,
+                                Alias = aliasOrdinal >= 0 && !reader.IsDBNull(aliasOrdinal)
+                                    ? Convert.ToString(reader.GetValue(aliasOrdinal))
+                                    : string.Empty,
+                                Rendimiento = rendimientoOrdinal >= 0 && !reader.IsDBNull(rendimientoOrdinal)
+                                    ? (decimal?)Convert.ToDecimal(reader.GetValue(rendimientoOrdinal))
+                                    : null,
+                                Cuadrilla = cuadrillaOrdinal >= 0 && !reader.IsDBNull(cuadrillaOrdinal)
+                                    ? (decimal?)Convert.ToDecimal(reader.GetValue(cuadrillaOrdinal))
+                                    : null
                             });
                         }
                     }
@@ -411,7 +431,14 @@ END";
             }
         }
 
-        public static int CrearRecurso(int empresaId, int tipoRecursoId, string recurso, int? unidadId)
+        public static int CrearRecurso(
+            int empresaId,
+            int tipoRecursoId,
+            string recurso,
+            int? unidadId,
+            int? tipoCalculoId,
+            decimal? rendimiento,
+            decimal? cuadrilla)
         {
             if (string.IsNullOrWhiteSpace(recurso))
                 throw new ArgumentException("El nombre del recurso es obligatorio.", "recurso");
@@ -424,19 +451,122 @@ WHERE EmpresaId = @EmpresaId AND TipoRecursoId = @TipoRecursoId AND Recurso = @R
             const string identitySql = @"
 SELECT COLUMNPROPERTY(OBJECT_ID('PreRecurso'), 'RecursoId', 'IsIdentity');";
 
-            const string insertIdentitySql = @"
-INSERT INTO PreRecurso (EmpresaId, TipoRecursoId, Recurso, UnidadId)
-VALUES (@EmpresaId, @TipoRecursoId, @Recurso, @UnidadId);
-SELECT CAST(SCOPE_IDENTITY() AS int);";
+                        const string insertIdentitySql = @"
+DECLARE @HasTipoCalculo bit = CASE WHEN COL_LENGTH('PreRecurso', 'TipoCalculoId') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasRendimiento bit = CASE WHEN COL_LENGTH('PreRecurso', 'Rendimiento') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasRendimientoManoObra bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoManoObra') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasCuadrilla bit = CASE WHEN COL_LENGTH('PreRecurso', 'Cuadrilla') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasRendimientoEquipos bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoEquipos') IS NOT NULL THEN 1 ELSE 0 END;
+
+DECLARE @Sql nvarchar(max) = N'
+INSERT INTO PreRecurso (EmpresaId, TipoRecursoId, Recurso, UnidadId';
+
+IF @HasTipoCalculo = 1
+    SET @Sql += N', TipoCalculoId';
+
+IF @HasRendimiento = 1
+    SET @Sql += N', Rendimiento';
+
+IF @HasRendimientoManoObra = 1
+    SET @Sql += N', RendimientoManoObra';
+
+IF @HasCuadrilla = 1
+    SET @Sql += N', Cuadrilla';
+
+IF @HasRendimientoEquipos = 1
+    SET @Sql += N', RendimientoEquipos';
+
+SET @Sql += N') VALUES (@EmpresaId, @TipoRecursoId, @Recurso, @UnidadId';
+
+IF @HasTipoCalculo = 1
+    SET @Sql += N', @TipoCalculoId';
+
+IF @HasRendimiento = 1
+    SET @Sql += N', @Rendimiento';
+
+IF @HasRendimientoManoObra = 1
+    SET @Sql += N', @Rendimiento';
+
+IF @HasCuadrilla = 1
+    SET @Sql += N', @Cuadrilla';
+
+IF @HasRendimientoEquipos = 1
+    SET @Sql += N', @Cuadrilla';
+
+SET @Sql += N');
+SELECT CAST(SCOPE_IDENTITY() AS int);';
+
+EXEC sp_executesql
+    @Sql,
+    N'@EmpresaId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @Cuadrilla decimal(18,5)',
+    @EmpresaId = @EmpresaId,
+    @TipoRecursoId = @TipoRecursoId,
+    @Recurso = @Recurso,
+    @UnidadId = @UnidadId,
+    @TipoCalculoId = @TipoCalculoId,
+    @Rendimiento = @Rendimiento,
+    @Cuadrilla = @Cuadrilla;";
 
             const string nextIdSql = @"
 SELECT ISNULL(MAX(RecursoId), 0) + 1
 FROM PreRecurso
 WHERE EmpresaId = @EmpresaId;";
 
-            const string insertRegularSql = @"
-INSERT INTO PreRecurso (EmpresaId, RecursoId, TipoRecursoId, Recurso, UnidadId)
-VALUES (@EmpresaId, @RecursoId, @TipoRecursoId, @Recurso, @UnidadId);";
+                        const string insertRegularSql = @"
+DECLARE @HasTipoCalculo bit = CASE WHEN COL_LENGTH('PreRecurso', 'TipoCalculoId') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasRendimiento bit = CASE WHEN COL_LENGTH('PreRecurso', 'Rendimiento') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasRendimientoManoObra bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoManoObra') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasCuadrilla bit = CASE WHEN COL_LENGTH('PreRecurso', 'Cuadrilla') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasRendimientoEquipos bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoEquipos') IS NOT NULL THEN 1 ELSE 0 END;
+
+DECLARE @Sql nvarchar(max) = N'
+INSERT INTO PreRecurso (EmpresaId, RecursoId, TipoRecursoId, Recurso, UnidadId';
+
+IF @HasTipoCalculo = 1
+    SET @Sql += N', TipoCalculoId';
+
+IF @HasRendimiento = 1
+    SET @Sql += N', Rendimiento';
+
+IF @HasRendimientoManoObra = 1
+    SET @Sql += N', RendimientoManoObra';
+
+IF @HasCuadrilla = 1
+    SET @Sql += N', Cuadrilla';
+
+IF @HasRendimientoEquipos = 1
+    SET @Sql += N', RendimientoEquipos';
+
+SET @Sql += N') VALUES (@EmpresaId, @RecursoId, @TipoRecursoId, @Recurso, @UnidadId';
+
+IF @HasTipoCalculo = 1
+    SET @Sql += N', @TipoCalculoId';
+
+IF @HasRendimiento = 1
+    SET @Sql += N', @Rendimiento';
+
+IF @HasRendimientoManoObra = 1
+    SET @Sql += N', @Rendimiento';
+
+IF @HasCuadrilla = 1
+    SET @Sql += N', @Cuadrilla';
+
+IF @HasRendimientoEquipos = 1
+    SET @Sql += N', @Cuadrilla';
+
+SET @Sql += N');';
+
+EXEC sp_executesql
+    @Sql,
+    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @Cuadrilla decimal(18,5)',
+    @EmpresaId = @EmpresaId,
+    @RecursoId = @RecursoId,
+    @TipoRecursoId = @TipoRecursoId,
+    @Recurso = @Recurso,
+    @UnidadId = @UnidadId,
+    @TipoCalculoId = @TipoCalculoId,
+    @Rendimiento = @Rendimiento,
+    @Cuadrilla = @Cuadrilla;";
 
             try
             {
@@ -454,8 +584,18 @@ VALUES (@EmpresaId, @RecursoId, @TipoRecursoId, @Recurso, @UnidadId);";
                             object existing = findExistingCommand.ExecuteScalar();
                             if (existing != null && existing != DBNull.Value)
                             {
+                                int existingResourceId = Convert.ToInt32(existing);
+                                ActualizarRecurso(
+                                    empresaId,
+                                    existingResourceId,
+                                    tipoRecursoId,
+                                    recurso,
+                                    unidadId,
+                                    tipoCalculoId,
+                                    rendimiento,
+                                    cuadrilla);
                                 transaction.Commit();
-                                return Convert.ToInt32(existing);
+                                return existingResourceId;
                             }
                         }
 
@@ -475,6 +615,18 @@ VALUES (@EmpresaId, @RecursoId, @TipoRecursoId, @Recurso, @UnidadId);";
                                 insertCommand.Parameters.Add("@TipoRecursoId", SqlDbType.Int).Value = tipoRecursoId;
                                 insertCommand.Parameters.Add("@Recurso", SqlDbType.NVarChar, 250).Value = recurso.Trim();
                                 insertCommand.Parameters.Add("@UnidadId", SqlDbType.Int).Value = unidadId.HasValue ? (object)unidadId.Value : DBNull.Value;
+                                insertCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = tipoCalculoId.HasValue ? (object)tipoCalculoId.Value : DBNull.Value;
+
+                                SqlParameter rendimientoParameter = insertCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal);
+                                rendimientoParameter.Precision = 18;
+                                rendimientoParameter.Scale = 5;
+                                rendimientoParameter.Value = rendimiento.HasValue ? (object)rendimiento.Value : DBNull.Value;
+
+                                SqlParameter cuadrillaParameter = insertCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal);
+                                cuadrillaParameter.Precision = 18;
+                                cuadrillaParameter.Scale = 5;
+                                cuadrillaParameter.Value = cuadrilla.HasValue ? (object)cuadrilla.Value : DBNull.Value;
+
                                 recursoId = Convert.ToInt32(insertCommand.ExecuteScalar());
                             }
                         }
@@ -494,6 +646,18 @@ VALUES (@EmpresaId, @RecursoId, @TipoRecursoId, @Recurso, @UnidadId);";
                                 insertCommand.Parameters.Add("@TipoRecursoId", SqlDbType.Int).Value = tipoRecursoId;
                                 insertCommand.Parameters.Add("@Recurso", SqlDbType.NVarChar, 250).Value = recurso.Trim();
                                 insertCommand.Parameters.Add("@UnidadId", SqlDbType.Int).Value = unidadId.HasValue ? (object)unidadId.Value : DBNull.Value;
+                                insertCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = tipoCalculoId.HasValue ? (object)tipoCalculoId.Value : DBNull.Value;
+
+                                SqlParameter rendimientoParameter = insertCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal);
+                                rendimientoParameter.Precision = 18;
+                                rendimientoParameter.Scale = 5;
+                                rendimientoParameter.Value = rendimiento.HasValue ? (object)rendimiento.Value : DBNull.Value;
+
+                                SqlParameter cuadrillaParameter = insertCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal);
+                                cuadrillaParameter.Precision = 18;
+                                cuadrillaParameter.Scale = 5;
+                                cuadrillaParameter.Value = cuadrilla.HasValue ? (object)cuadrilla.Value : DBNull.Value;
+
                                 insertCommand.ExecuteNonQuery();
                             }
 
@@ -512,6 +676,98 @@ VALUES (@EmpresaId, @RecursoId, @TipoRecursoId, @Recurso, @UnidadId);";
             catch (InvalidOperationException ex)
             {
                 throw new DataException("Error de operación al crear el recurso.", ex);
+            }
+        }
+
+        public static void ActualizarRecurso(
+            int empresaId,
+            int recursoId,
+            int tipoRecursoId,
+            string recurso,
+            int? unidadId,
+            int? tipoCalculoId,
+            decimal? rendimiento,
+            decimal? cuadrilla)
+        {
+            if (string.IsNullOrWhiteSpace(recurso))
+                throw new ArgumentException("El nombre del recurso es obligatorio.", "recurso");
+
+                        const string sql = @"
+DECLARE @HasTipoCalculo bit = CASE WHEN COL_LENGTH('PreRecurso', 'TipoCalculoId') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasRendimiento bit = CASE WHEN COL_LENGTH('PreRecurso', 'Rendimiento') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasRendimientoManoObra bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoManoObra') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasCuadrilla bit = CASE WHEN COL_LENGTH('PreRecurso', 'Cuadrilla') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasRendimientoEquipos bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoEquipos') IS NOT NULL THEN 1 ELSE 0 END;
+
+DECLARE @Sql nvarchar(max) = N'
+UPDATE PreRecurso
+SET TipoRecursoId = @TipoRecursoId,
+    Recurso = @Recurso,
+    UnidadId = @UnidadId';
+
+IF @HasTipoCalculo = 1
+    SET @Sql += N', TipoCalculoId = @TipoCalculoId';
+
+IF @HasRendimiento = 1
+    SET @Sql += N', Rendimiento = @Rendimiento';
+
+IF @HasRendimientoManoObra = 1
+    SET @Sql += N', RendimientoManoObra = @Rendimiento';
+
+IF @HasCuadrilla = 1
+    SET @Sql += N', Cuadrilla = @Cuadrilla';
+
+IF @HasRendimientoEquipos = 1
+    SET @Sql += N', RendimientoEquipos = @Cuadrilla';
+
+SET @Sql += N'
+WHERE EmpresaId = @EmpresaId AND RecursoId = @RecursoId;';
+
+EXEC sp_executesql
+    @Sql,
+    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @Cuadrilla decimal(18,5)',
+    @EmpresaId = @EmpresaId,
+    @RecursoId = @RecursoId,
+    @TipoRecursoId = @TipoRecursoId,
+    @Recurso = @Recurso,
+    @UnidadId = @UnidadId,
+    @TipoCalculoId = @TipoCalculoId,
+    @Rendimiento = @Rendimiento,
+    @Cuadrilla = @Cuadrilla;";
+
+            try
+            {
+                using (var connection = new SqlConnection(ConnectionString))
+                using (var command = new SqlCommand(sql, connection))
+                {
+                    command.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
+                    command.Parameters.Add("@RecursoId", SqlDbType.Int).Value = recursoId;
+                    command.Parameters.Add("@TipoRecursoId", SqlDbType.Int).Value = tipoRecursoId;
+                    command.Parameters.Add("@Recurso", SqlDbType.NVarChar, 250).Value = recurso.Trim();
+                    command.Parameters.Add("@UnidadId", SqlDbType.Int).Value = unidadId.HasValue ? (object)unidadId.Value : DBNull.Value;
+                    command.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = tipoCalculoId.HasValue ? (object)tipoCalculoId.Value : DBNull.Value;
+
+                    SqlParameter rendimientoParameter = command.Parameters.Add("@Rendimiento", SqlDbType.Decimal);
+                    rendimientoParameter.Precision = 18;
+                    rendimientoParameter.Scale = 5;
+                    rendimientoParameter.Value = rendimiento.HasValue ? (object)rendimiento.Value : DBNull.Value;
+
+                    SqlParameter cuadrillaParameter = command.Parameters.Add("@Cuadrilla", SqlDbType.Decimal);
+                    cuadrillaParameter.Precision = 18;
+                    cuadrillaParameter.Scale = 5;
+                    cuadrillaParameter.Value = cuadrilla.HasValue ? (object)cuadrilla.Value : DBNull.Value;
+
+                    connection.Open();
+                    command.ExecuteNonQuery();
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new DataException("Error al actualizar el recurso.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new DataException("Error de operación al actualizar el recurso.", ex);
             }
         }
 

@@ -9,7 +9,20 @@ namespace DevExpressTreeListDemo
     {
         private void LoadBudgetTree()
         {
+            ReloadBudgetFromTablesAndRecalculate();
+        }
+
+        private void ReloadBudgetFromTablesAndRecalculate()
+        {
             var items = Datos.ObtenerRecursosPresupuesto(EmpresaId, PresupuestoId);
+            var catalogResources = Datos.ObtenerRecursos(EmpresaId);
+            LoadBudgetTree(items, catalogResources);
+        }
+
+        private void LoadBudgetTree(List<RecursoPresupuestoDto> items, List<RecursoDto> catalogResources)
+        {
+            if (items == null)
+                items = new List<RecursoPresupuestoDto>();
 
             suppressPersistence = true;
             treeList1.BeginUnboundLoad();
@@ -55,6 +68,7 @@ namespace DevExpressTreeListDemo
                 }
 
                 treeListItemService.AssignItemNumbers();
+                RefreshPartidaCalculationDataFromCatalog(catalogResources);
             }
             finally
             {
@@ -64,6 +78,35 @@ namespace DevExpressTreeListDemo
 
             RecalculateNumericRules();
             UpdatePendingSaveIndicator(false);
+        }
+
+        private void RefreshPartidaCalculationDataFromCatalog(List<RecursoDto> catalogResources)
+        {
+            if (catalogResources == null || catalogResources.Count == 0)
+                return;
+
+            var resourcesById = new Dictionary<int, RecursoDto>();
+            for (int i = 0; i < catalogResources.Count; i++)
+            {
+                RecursoDto resource = catalogResources[i];
+                if (!resourcesById.ContainsKey(resource.RecursoId))
+                    resourcesById.Add(resource.RecursoId, resource);
+            }
+
+            foreach (TreeListNode node in EnumerateAllNodes())
+            {
+                if (!resourceTypePolicy.IsPartida(node))
+                    continue;
+
+                int? resourceId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                if (!resourceId.HasValue)
+                    continue;
+
+                if (!resourcesById.TryGetValue(resourceId.Value, out RecursoDto resource))
+                    continue;
+
+                SetPartidaCalculationData(node, resource.Rendimiento, resource.Cuadrilla);
+            }
         }
 
         private void SaveBudgetTree()

@@ -6,6 +6,8 @@ namespace DevExpressTreeListDemo
     {
         public object[] Values { get; set; }
 
+        public PartidaCalculationData PartidaCalculationData { get; set; }
+
         public List<NodeClipboardData> Children { get; set; }
     }
 }

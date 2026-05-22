@@ -137,6 +137,7 @@ namespace DevExpressTreeListDemo
                     node.GetValue(ValueIndexTotalValue),
                     node.GetValue(ValueIndexAlias)
                 },
+                PartidaCalculationData = ClonePartidaCalculationData(node.Tag as PartidaCalculationData),
                 Children = new System.Collections.Generic.List<NodeClipboardData>()
             };
 
@@ -318,6 +319,7 @@ namespace DevExpressTreeListDemo
         private TreeListNode AppendNodeFromClipboard(TreeListNode parent, NodeClipboardData data)
         {
             TreeListNode node = treeList.AppendNode((object[])data.Values.Clone(), parent);
+            node.Tag = ClonePartidaCalculationData(data.PartidaCalculationData);
 
             for (int i = 0; i < data.Children.Count; i++)
                 AppendNodeFromClipboard(node, data.Children[i]);
@@ -345,6 +347,7 @@ namespace DevExpressTreeListDemo
             NodeClipboardData clone = new NodeClipboardData
             {
                 Values = (object[])source.Values.Clone(),
+                PartidaCalculationData = ClonePartidaCalculationData(source.PartidaCalculationData),
                 Children = new System.Collections.Generic.List<NodeClipboardData>()
             };
 
@@ -352,6 +355,18 @@ namespace DevExpressTreeListDemo
                 clone.Children.Add(CloneClipboardData(source.Children[i]));
 
             return clone;
+        }
+
+        private static PartidaCalculationData ClonePartidaCalculationData(PartidaCalculationData source)
+        {
+            if (source == null)
+                return null;
+
+            return new PartidaCalculationData
+            {
+                RendimientoManoObra = source.RendimientoManoObra,
+                RendimientoEquipos = source.RendimientoEquipos
+            };
         }
 
         private void RunUnbound(Action action)

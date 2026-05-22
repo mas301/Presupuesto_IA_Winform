@@ -66,6 +66,7 @@ namespace DevExpressTreeListDemo
                 || GetColumnIndex(e.Column) == TotalValueColumnIndex
                 || GetColumnIndex(e.Column) == HoursPerDayColumnIndex
                 || GetColumnIndex(e.Column) == PerformanceColumnIndex
+                || (GetColumnIndex(e.Column) == CalculationTypeColumnIndex && (isPartida || isSubpresupuesto))
                 || (GetColumnIndex(e.Column) == CrewColumnIndex && (!allowsCalculationDetail || isPartida))
                 || (GetColumnIndex(e.Column) == QuantityColumnIndex && isSubpresupuesto)
                 || (GetColumnIndex(e.Column) == UnitValueColumnIndex && isSubpresupuesto)
@@ -122,6 +123,12 @@ namespace DevExpressTreeListDemo
                 return;
             }
 
+            if (columnIndex == CalculationTypeColumnIndex)
+            {
+                e.Cancel = true;
+                return;
+            }
+
             if (columnIndex == CrewColumnIndex && (!allowsCalculationDetail || isPartida))
             {
                 e.Cancel = true;
@@ -155,6 +162,7 @@ namespace DevExpressTreeListDemo
                 {
                     e.Node.SetValue(ResourceColumnIndex, null);
                     e.Node.SetValue(UnitColumnIndex, null);
+                    e.Node.SetValue(CalculationTypeColumnIndex, null);
                 }
                 finally
                 {
@@ -168,16 +176,53 @@ namespace DevExpressTreeListDemo
                 try
                 {
                     int? resourceId = ToNullableInt(e.Node.GetValue(ResourceColumnIndex));
+
+                    int? unitId = null;
                     if (resourceId.HasValue
                         && resourceUnitIdsByResourceId != null
-                        && resourceUnitIdsByResourceId.TryGetValue(resourceId.Value, out int? unitId)
-                        && unitId.HasValue)
+                        && resourceUnitIdsByResourceId.TryGetValue(resourceId.Value, out int? foundUnitId))
+                    {
+                        unitId = foundUnitId;
+                    }
+
+                    int? calculationTypeId = null;
+                    if (resourceId.HasValue
+                        && resourceCalculationTypeIdsByResourceId != null
+                        && resourceCalculationTypeIdsByResourceId.TryGetValue(resourceId.Value, out int? foundCalculationTypeId))
+                    {
+                        calculationTypeId = foundCalculationTypeId;
+                    }
+
+                    if (unitId.HasValue)
                     {
                         e.Node.SetValue(UnitColumnIndex, unitId.Value);
                     }
                     else
                     {
                         e.Node.SetValue(UnitColumnIndex, null);
+                    }
+
+                    if (calculationTypeId.HasValue)
+                    {
+                        e.Node.SetValue(CalculationTypeColumnIndex, calculationTypeId.Value);
+                    }
+                    else
+                    {
+                        e.Node.SetValue(CalculationTypeColumnIndex, null);
+                    }
+
+                    if (resourceTypePolicy.IsPartida(e.Node))
+                    {
+                        if (resourceId.HasValue
+                            && resourcesById != null
+                            && resourcesById.TryGetValue(resourceId.Value, out RecursoDto resource))
+                        {
+                            SetPartidaCalculationData(e.Node, resource.Rendimiento, resource.Cuadrilla);
+                        }
+                        else
+                        {
+                            SetPartidaCalculationData(e.Node, null, null);
+                        }
                     }
                 }
                 finally

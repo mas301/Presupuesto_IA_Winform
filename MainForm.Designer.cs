@@ -26,6 +26,7 @@ namespace DevExpressTreeListDemo
         private System.Windows.Forms.Panel topPanel;
         private System.Windows.Forms.Button btnSaveBudgetDetail;
         private System.Windows.Forms.Button btnCreateResource;
+        private System.Windows.Forms.Button btnRecalculateAll;
         private System.Windows.Forms.Button btnPropiedades;
         private System.Windows.Forms.Button btnMoveUp;
         private System.Windows.Forms.Button btnMoveRight;
@@ -68,6 +69,7 @@ namespace DevExpressTreeListDemo
             this.topPanel = new System.Windows.Forms.Panel();
             this.btnSaveBudgetDetail = new System.Windows.Forms.Button();
             this.btnCreateResource = new System.Windows.Forms.Button();
+            this.btnRecalculateAll = new System.Windows.Forms.Button();
             this.btnPropiedades = new System.Windows.Forms.Button();
             this.btnMoveUp = new System.Windows.Forms.Button();
             this.btnMoveRight = new System.Windows.Forms.Button();
@@ -88,6 +90,7 @@ namespace DevExpressTreeListDemo
             this.topPanel.Controls.Add(this.btnMoveRight);
             this.topPanel.Controls.Add(this.btnMoveUp);
             this.topPanel.Controls.Add(this.btnPropiedades);
+            this.topPanel.Controls.Add(this.btnRecalculateAll);
             this.topPanel.Controls.Add(this.btnCreateResource);
             this.topPanel.Controls.Add(this.btnSaveBudgetDetail);
             this.topPanel.Dock = System.Windows.Forms.DockStyle.Top;
@@ -112,6 +115,21 @@ namespace DevExpressTreeListDemo
             this.btnCreateResource.UseVisualStyleBackColor = false;
             this.btnCreateResource.Click += new System.EventHandler(this.btnCreateResource_Click);
             // 
+            // btnRecalculateAll
+            // 
+            this.btnRecalculateAll.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(216)))), ((int)(((byte)(126)))), ((int)(((byte)(33)))));
+            this.btnRecalculateAll.FlatAppearance.BorderSize = 0;
+            this.btnRecalculateAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnRecalculateAll.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnRecalculateAll.ForeColor = System.Drawing.Color.White;
+            this.btnRecalculateAll.Location = new System.Drawing.Point(260, 5);
+            this.btnRecalculateAll.Name = "btnRecalculateAll";
+            this.btnRecalculateAll.Size = new System.Drawing.Size(120, 28);
+            this.btnRecalculateAll.TabIndex = 2;
+            this.btnRecalculateAll.Text = "Recalcular todo";
+            this.btnRecalculateAll.UseVisualStyleBackColor = false;
+            this.btnRecalculateAll.Click += new System.EventHandler(this.btnRecalculateAll_Click);
+            // 
             // btnPropiedades
             // 
             this.btnPropiedades.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(90)))), ((int)(((byte)(90)))));
@@ -119,10 +137,10 @@ namespace DevExpressTreeListDemo
             this.btnPropiedades.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnPropiedades.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnPropiedades.ForeColor = System.Drawing.Color.White;
-            this.btnPropiedades.Location = new System.Drawing.Point(260, 5);
+            this.btnPropiedades.Location = new System.Drawing.Point(386, 5);
             this.btnPropiedades.Name = "btnPropiedades";
             this.btnPropiedades.Size = new System.Drawing.Size(110, 28);
-            this.btnPropiedades.TabIndex = 2;
+            this.btnPropiedades.TabIndex = 3;
             this.btnPropiedades.Text = "Propiedades";
             this.btnPropiedades.UseVisualStyleBackColor = false;
             this.btnPropiedades.Click += new System.EventHandler(this.btnPropiedades_Click);
@@ -134,10 +152,10 @@ namespace DevExpressTreeListDemo
             this.btnMoveUp.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnMoveUp.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnMoveUp.ForeColor = System.Drawing.Color.White;
-            this.btnMoveUp.Location = new System.Drawing.Point(376, 5);
+            this.btnMoveUp.Location = new System.Drawing.Point(502, 5);
             this.btnMoveUp.Name = "btnMoveUp";
             this.btnMoveUp.Size = new System.Drawing.Size(95, 28);
-            this.btnMoveUp.TabIndex = 3;
+            this.btnMoveUp.TabIndex = 4;
             this.btnMoveUp.Text = "↑ Arriba";
             this.btnMoveUp.Enabled = false;
             this.btnMoveUp.UseVisualStyleBackColor = false;
@@ -150,10 +168,10 @@ namespace DevExpressTreeListDemo
             this.btnMoveRight.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnMoveRight.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnMoveRight.ForeColor = System.Drawing.Color.White;
-            this.btnMoveRight.Location = new System.Drawing.Point(477, 5);
+            this.btnMoveRight.Location = new System.Drawing.Point(603, 5);
             this.btnMoveRight.Name = "btnMoveRight";
             this.btnMoveRight.Size = new System.Drawing.Size(95, 28);
-            this.btnMoveRight.TabIndex = 4;
+            this.btnMoveRight.TabIndex = 5;
             this.btnMoveRight.Text = "→ Derecha";
             this.btnMoveRight.Enabled = false;
             this.btnMoveRight.UseVisualStyleBackColor = false;
@@ -166,10 +184,10 @@ namespace DevExpressTreeListDemo
             this.btnMoveDown.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnMoveDown.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnMoveDown.ForeColor = System.Drawing.Color.White;
-            this.btnMoveDown.Location = new System.Drawing.Point(578, 5);
+            this.btnMoveDown.Location = new System.Drawing.Point(704, 5);
             this.btnMoveDown.Name = "btnMoveDown";
             this.btnMoveDown.Size = new System.Drawing.Size(95, 28);
-            this.btnMoveDown.TabIndex = 5;
+            this.btnMoveDown.TabIndex = 6;
             this.btnMoveDown.Text = "↓ Abajo";
             this.btnMoveDown.Enabled = false;
             this.btnMoveDown.UseVisualStyleBackColor = false;
@@ -182,10 +200,10 @@ namespace DevExpressTreeListDemo
             this.btnMoveLeft.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnMoveLeft.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnMoveLeft.ForeColor = System.Drawing.Color.White;
-            this.btnMoveLeft.Location = new System.Drawing.Point(679, 5);
+            this.btnMoveLeft.Location = new System.Drawing.Point(805, 5);
             this.btnMoveLeft.Name = "btnMoveLeft";
             this.btnMoveLeft.Size = new System.Drawing.Size(95, 28);
-            this.btnMoveLeft.TabIndex = 6;
+            this.btnMoveLeft.TabIndex = 7;
             this.btnMoveLeft.Text = "← Izquierda";
             this.btnMoveLeft.Enabled = false;
             this.btnMoveLeft.UseVisualStyleBackColor = false;
@@ -196,10 +214,10 @@ namespace DevExpressTreeListDemo
             this.lblPendingSaveStatus.AutoSize = true;
             this.lblPendingSaveStatus.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblPendingSaveStatus.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(200)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
-            this.lblPendingSaveStatus.Location = new System.Drawing.Point(780, 11);
+            this.lblPendingSaveStatus.Location = new System.Drawing.Point(906, 11);
             this.lblPendingSaveStatus.Name = "lblPendingSaveStatus";
             this.lblPendingSaveStatus.Size = new System.Drawing.Size(0, 15);
-            this.lblPendingSaveStatus.TabIndex = 7;
+            this.lblPendingSaveStatus.TabIndex = 8;
             this.lblPendingSaveStatus.Text = "";
             // 
             // btnSaveBudgetDetail

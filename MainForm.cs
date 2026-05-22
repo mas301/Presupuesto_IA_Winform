@@ -7,6 +7,12 @@ using System.Windows.Forms;
 
 namespace DevExpressTreeListDemo
 {
+    internal sealed class PartidaCalculationData
+    {
+        public decimal? RendimientoManoObra { get; set; }
+        public decimal? RendimientoEquipos { get; set; }
+    }
+
     public partial class MainForm : Form
     {
         private const int EmpresaId = 1;
@@ -45,6 +51,8 @@ namespace DevExpressTreeListDemo
         private bool columnaCuadrillaVisible = true;
         private Dictionary<int, string> resourceNamesById;
         private Dictionary<int, int?> resourceUnitIdsByResourceId;
+        private Dictionary<int, int?> resourceCalculationTypeIdsByResourceId;
+        private Dictionary<int, RecursoDto> resourcesById;
         private Dictionary<int, string> unitDisplayNamesById;
 
         public int GrabacionAutomatica
@@ -194,7 +202,7 @@ namespace DevExpressTreeListDemo
 
             var calculationTypeColumn = treeList1.Columns[CalculationTypeColumnIndex];
             calculationTypeColumn.Caption = "Tipo Calculo";
-            calculationTypeColumn.OptionsColumn.AllowEdit = true;
+            calculationTypeColumn.OptionsColumn.AllowEdit = false;
 
             var hoursPerDayColumn = treeList1.Columns[HoursPerDayColumnIndex];
             hoursPerDayColumn.Caption = "Horas Jornal";
@@ -263,6 +271,8 @@ namespace DevExpressTreeListDemo
 
             resourceNamesById = BuildResourceNameMap(resources);
             resourceUnitIdsByResourceId = BuildResourceUnitMap(resources);
+            resourceCalculationTypeIdsByResourceId = BuildResourceCalculationTypeMap(resources);
+            resourcesById = BuildResourceCatalogMap(resources);
             unitDisplayNamesById = BuildUnitDisplayMap(units);
 
             var calculationTypesTable = new DataTable();
@@ -391,6 +401,32 @@ namespace DevExpressTreeListDemo
             return map;
         }
 
+        private static Dictionary<int, int?> BuildResourceCalculationTypeMap(List<RecursoDto> resources)
+        {
+            var map = new Dictionary<int, int?>();
+            for (int i = 0; i < resources.Count; i++)
+            {
+                RecursoDto resource = resources[i];
+                if (!map.ContainsKey(resource.RecursoId))
+                    map.Add(resource.RecursoId, resource.TipoCalculoId);
+            }
+
+            return map;
+        }
+
+        private static Dictionary<int, RecursoDto> BuildResourceCatalogMap(List<RecursoDto> resources)
+        {
+            var map = new Dictionary<int, RecursoDto>();
+            for (int i = 0; i < resources.Count; i++)
+            {
+                RecursoDto resource = resources[i];
+                if (!map.ContainsKey(resource.RecursoId))
+                    map.Add(resource.RecursoId, resource);
+            }
+
+            return map;
+        }
+
         private static Dictionary<int, string> BuildUnitDisplayMap(List<UnidadDto> units)
         {
             var map = new Dictionary<int, string>();
@@ -430,12 +466,6 @@ namespace DevExpressTreeListDemo
             column.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
             column.Format.FormatType = DevExpress.Utils.FormatType.Numeric;
             column.Format.FormatString = "n2";
-        }
-
-        private sealed class PartidaCalculationData
-        {
-            public decimal? RendimientoManoObra { get; set; }
-            public decimal? RendimientoEquipos { get; set; }
         }
 
         private static PartidaCalculationData GetPartidaCalculationData(TreeListNode node, bool createIfMissing)
