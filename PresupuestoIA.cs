@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Windows.Forms;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     internal sealed class PartidaCalculationData
     {
@@ -14,11 +14,14 @@ namespace DevExpressTreeListDemo
         public decimal? RendimientoEquipos { get; set; }
     }
 
-    public partial class MainForm : Form
+    public partial class PresupuestoIA : Form
     {
-        private const int EmpresaId = 1;
-        private const int PresupuestoId = 1;
+        private const int DefaultEmpresaId = 1;
+        private const int DefaultPresupuestoId = 1;
         private const int DefaultGrabacionAutomaticaSegundos = 300;
+
+        private readonly int EmpresaId;
+        private readonly int PresupuestoId;
 
         // FieldName constants for tree list columns (must match Designer FieldName values)
         internal static class ColumnNames
@@ -171,8 +174,26 @@ namespace DevExpressTreeListDemo
             }
         }
 
-        public MainForm()
+        public PresupuestoIA()
+            : this(DefaultEmpresaId, DefaultPresupuestoId)
         {
+        }
+
+        /// <summary>
+        /// Constructor para uso desde una aplicacion host: recibe la cadena
+        /// de conexion, el id de empresa y el id de presupuesto.
+        /// </summary>
+        public PresupuestoIA(string connectionString, int empresaId, int presupuestoId)
+            : this(empresaId, presupuestoId)
+        {
+            Datos.Configure(connectionString);
+        }
+
+        private PresupuestoIA(int empresaId, int presupuestoId)
+        {
+            EmpresaId = empresaId;
+            PresupuestoId = presupuestoId;
+
             InitializeComponent();
 
             treeListItemService = new TreeListItemService(treeList1, null);
@@ -183,7 +204,6 @@ namespace DevExpressTreeListDemo
             lastAutoSaveUtc = DateTime.UtcNow;
             ConfigureColumnEditors();
             LoadBudgetTree();
-            treeList1.ExpandAll();
             UpdateMoveActionsState(treeList1.FocusedNode);
         }
 
@@ -240,8 +260,12 @@ namespace DevExpressTreeListDemo
             }
 
             treeList1.OptionsBehavior.Editable = true;
+            treeList1.Appearance.HeaderPanel.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
             for (int i = 0; i < treeList1.Columns.Count; i++)
+            {
                 treeList1.Columns[i].OptionsColumn.AllowEdit = false;
+                treeList1.Columns[i].AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
+            }
 
             columnTipoRecurso = treeList1.Columns[ColumnNames.TipoRecurso];
             columnTipoRecurso.Caption = "Tipo Recurso";
@@ -258,7 +282,7 @@ namespace DevExpressTreeListDemo
             columnIndependiente.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
 
             columnCantidadTotal = treeList1.Columns[ColumnNames.CantidadTotal];
-            columnCantidadTotal.Caption = "CantidadTotal";
+            columnCantidadTotal.Caption = "Cantidad Total";
             columnCantidadTotal.OptionsColumn.AllowEdit = true;
 
             columnTipoCalculo = treeList1.Columns[ColumnNames.TipoCalculo];
@@ -270,7 +294,7 @@ namespace DevExpressTreeListDemo
             columnHorasJornal.OptionsColumn.AllowEdit = false;
 
             columnRendimiento = treeList1.Columns[ColumnNames.Rendimiento];
-            columnRendimiento.Caption = "Rendimiento";
+            columnRendimiento.Caption = "% Rend/Utiliz";
             columnRendimiento.OptionsColumn.AllowEdit = true;
 
             columnCantidad = treeList1.Columns[ColumnNames.Cantidad];
@@ -282,7 +306,7 @@ namespace DevExpressTreeListDemo
             columnPesoUnitario.OptionsColumn.AllowEdit = true;
 
             columnDiasDuracion = treeList1.Columns[ColumnNames.DiasDuracion];
-            columnDiasDuracion.Caption = "DiasDuracion";
+            columnDiasDuracion.Caption = "Dias Duración";
             columnDiasDuracion.OptionsColumn.AllowEdit = false;
 
             ApplyConfiguredColumnVisibility();
@@ -407,6 +431,19 @@ namespace DevExpressTreeListDemo
 
             treeList1.NodeCellStyle -= treeList1_NodeCellStyle;
             treeList1.NodeCellStyle += treeList1_NodeCellStyle;
+
+            treeList1.AfterExpand -= treeList1_NodeExpandedChanged;
+            treeList1.AfterExpand += treeList1_NodeExpandedChanged;
+
+            treeList1.AfterCollapse -= treeList1_NodeExpandedChanged;
+            treeList1.AfterCollapse += treeList1_NodeExpandedChanged;
+        }
+
+        private void treeList1_NodeExpandedChanged(object sender, DevExpress.XtraTreeList.NodeEventArgs e)
+        {
+            if (suppressPersistence)
+                return;
+            MarkPendingAutoSave();
         }
 
         private void RefreshHorasJornalPresupuesto()

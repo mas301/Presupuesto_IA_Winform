@@ -1,4 +1,4 @@
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     partial class Propiedades
     {

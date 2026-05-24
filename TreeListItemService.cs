@@ -4,13 +4,13 @@ using DevExpress.XtraTreeList.Nodes;
 using System;
 using System.Collections.Generic;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     internal sealed class TreeListItemService
     {
-        private const string FieldItem = MainForm.ColumnNames.Item;
-        private const string FieldResourceType = MainForm.ColumnNames.TipoRecurso;
-        private const string FieldAlias = MainForm.ColumnNames.Alias;
+        private const string FieldItem = PresupuestoIA.ColumnNames.Item;
+        private const string FieldResourceType = PresupuestoIA.ColumnNames.TipoRecurso;
+        private const string FieldAlias = PresupuestoIA.ColumnNames.Alias;
 
         private readonly TreeList treeList;
         private ResourceTypePolicy policy;

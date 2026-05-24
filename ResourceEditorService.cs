@@ -7,7 +7,7 @@ using DevExpress.XtraTreeList.Nodes;
 using System;
 using System.Data;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     internal sealed class ResourceEditorService
     {

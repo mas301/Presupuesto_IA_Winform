@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     internal sealed class ResourceTypePolicy
     {

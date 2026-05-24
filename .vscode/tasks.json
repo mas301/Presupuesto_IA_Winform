@@ -2,12 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build-devexpress-demo",
+      "label": "build-presupuestoia",
       "type": "shell",
       "command": "dotnet",
       "args": [
         "build",
-        "DevExpressTreeListDemo.csproj",
+        "PresupuestoIA.csproj",
         "-c",
         "Debug",
         "-p:Platform=x64"
@@ -18,10 +18,10 @@
       ]
     },
     {
-      "label": "run-devexpress-demo",
+      "label": "run-presupuestoia",
       "type": "shell",
-      "command": "${workspaceFolder}/bin/x64/Debug/DevExpressTreeListDemo.exe",
-      "dependsOn": "build-devexpress-demo",
+      "command": "${workspaceFolder}/bin/x64/Debug/PresupuestoIA.exe",
+      "dependsOn": "build-presupuestoia",
       "problemMatcher": []
     }
   ]

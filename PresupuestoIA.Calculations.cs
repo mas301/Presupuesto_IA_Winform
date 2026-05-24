@@ -1,25 +1,41 @@
 using DevExpress.XtraTreeList.Nodes;
 using System;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
-    public partial class MainForm
+    public partial class PresupuestoIA
     {
         private void RecalculateNumericRules()
         {
             RefreshHorasJornalPresupuesto();
 
+            // Capturar estado expandido antes del recalculo.
+            var expandedState = new System.Collections.Generic.Dictionary<TreeListNode, bool>();
+            foreach (TreeListNode node in EnumerateAllNodes())
+            {
+                if (node.HasChildren)
+                    expandedState[node] = node.Expanded;
+            }
+
+            bool previousSuppress = suppressPersistence;
             suppressPersistence = true;
-            treeList1.BeginUnboundLoad();
+            treeList1.BeginUpdate();
             try
             {
                 for (int i = 0; i < treeList1.Nodes.Count; i++)
                     RecalculateNode(treeList1.Nodes[i], false);
+
+                // Restaurar estado expandido dentro del BeginUpdate.
+                foreach (var entry in expandedState)
+                {
+                    if (entry.Key.HasChildren && entry.Key.Expanded != entry.Value)
+                        entry.Key.Expanded = entry.Value;
+                }
             }
             finally
             {
-                treeList1.EndUnboundLoad();
-                suppressPersistence = false;
+                treeList1.EndUpdate();
+                suppressPersistence = previousSuppress;
             }
         }
 
@@ -36,7 +52,7 @@ namespace DevExpressTreeListDemo
 
             if (allowsCalculationDetail)
             {
-                decimal horasJornal = horasJornalPresupuestoActual;
+                decimal horasJornal = ResolveHorasJornalForNode(node);
                 node.SetValue(columnHorasJornal, horasJornal);
                 decimal cantidad = ToDecimal(node.GetValue(columnCantidad));
                 decimal rendimiento = ResolveRendimientoForCalculationType2Or3(node);
@@ -47,7 +63,7 @@ namespace DevExpressTreeListDemo
             }
             else if (IsCalculationType8(node) && !isPartida)
             {
-                decimal horasJornal = horasJornalPresupuestoActual;
+                decimal horasJornal = ResolveHorasJornalForNode(node);
                 node.SetValue(columnHorasJornal, horasJornal);
                 node.SetValue(columnRendimiento, null);
 
@@ -57,6 +73,34 @@ namespace DevExpressTreeListDemo
                 decimal cantidad = ToDecimal(node.GetValue(columnCantidad));
                 decimal diasDuracion = partidaDiasDuracion ?? 0m;
                 node.SetValue(columnCantidadTotal, cantidad * horasJornal * diasDuracion);
+            }
+            else if (IsCalculationType9(node) && !isPartida)
+            {
+                decimal horasJornal = ResolveHorasJornalForNode(node);
+                node.SetValue(columnHorasJornal, horasJornal);
+
+                decimal? partidaDiasDuracion = GetPartidaDiasDuracionFromCatalog(node);
+                node.SetValue(columnDiasDuracion, partidaDiasDuracion);
+
+                TreeListNode partidaNode = FindContainingPartida(node);
+                decimal rendimiento = partidaNode == null ? 0m : (GetPartidaRendimientoEquipos(partidaNode) ?? 0m);
+                node.SetValue(columnRendimiento, rendimiento);
+
+                decimal cantidad = ToDecimal(node.GetValue(columnCantidad));
+                decimal diasDuracion = partidaDiasDuracion ?? 0m;
+                node.SetValue(columnCantidadTotal, cantidad * diasDuracion * horasJornal * rendimiento / 100m);
+            }
+            else if (IsCalculationType10(node) && !isPartida)
+            {
+                decimal horasJornal = ResolveHorasJornalForNode(node);
+                node.SetValue(columnHorasJornal, horasJornal);
+
+                TreeListNode partidaNode = FindContainingPartida(node);
+                decimal rendimiento = partidaNode == null ? 0m : (GetPartidaRendimientoEquipos(partidaNode) ?? 0m);
+                node.SetValue(columnRendimiento, rendimiento);
+
+                decimal cantidad = ToDecimal(node.GetValue(columnCantidad));
+                node.SetValue(columnCantidadTotal, cantidad * horasJornal * rendimiento / 100m);
             }
             else
             {
@@ -239,6 +283,31 @@ namespace DevExpressTreeListDemo
                 return partidaResource.DiasDuracion;
 
             return null;
+        }
+
+        private decimal? GetPartidaHorasJornalFromCatalog(TreeListNode node)
+        {
+            TreeListNode partidaNode = FindContainingPartida(node);
+            if (partidaNode == null || resourcesById == null)
+                return null;
+
+            int? partidaResourceId = ToNullableInt(partidaNode.GetValue(columnRecurso));
+            if (!partidaResourceId.HasValue)
+                return null;
+
+            if (resourcesById.TryGetValue(partidaResourceId.Value, out RecursoDto partidaResource))
+                return partidaResource.HorasJornal;
+
+            return null;
+        }
+
+        private decimal ResolveHorasJornalForNode(TreeListNode node)
+        {
+            decimal? partidaHorasJornal = GetPartidaHorasJornalFromCatalog(node);
+            if (partidaHorasJornal.HasValue && partidaHorasJornal.Value > 0m)
+                return partidaHorasJornal.Value;
+
+            return horasJornalPresupuestoActual;
         }
     }
 }

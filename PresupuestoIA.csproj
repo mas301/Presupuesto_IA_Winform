@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
     <ProjectGuid>{6F4FA327-9D90-4E20-B3F0-DDF6A7CB2CE4}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>DevExpressTreeListDemo</RootNamespace>
-    <AssemblyName>DevExpressTreeListDemo</AssemblyName>
+    <RootNamespace>PresupuestoIA</RootNamespace>
+    <AssemblyName>PresupuestoIA</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -103,23 +103,27 @@
     <Compile Include="EditableSettingAttribute.cs" />
     <Compile Include="NodeClipboardData.cs" />
     <Compile Include="SettingsBag.cs" />
-    <Compile Include="MainForm.cs">
+    <Compile Include="PresupuestoIA.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.TreeListEditing.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
+    <Compile Include="PresupuestoIA.TreeListEditing.cs">
+      <DependentUpon>PresupuestoIA.cs</DependentUpon>
+      <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.Persistence.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
+    <Compile Include="PresupuestoIA.Persistence.cs">
+      <DependentUpon>PresupuestoIA.cs</DependentUpon>
+      <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.Calculations.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
+    <Compile Include="PresupuestoIA.Calculations.cs">
+      <DependentUpon>PresupuestoIA.cs</DependentUpon>
+      <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.ContextMenu.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
+    <Compile Include="PresupuestoIA.ContextMenu.cs">
+      <DependentUpon>PresupuestoIA.cs</DependentUpon>
+      <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.Designer.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
+    <Compile Include="PresupuestoIA.Designer.cs">
+      <DependentUpon>PresupuestoIA.cs</DependentUpon>
     </Compile>
     <Compile Include="ResourceEditForm.cs">
       <SubType>Form</SubType>

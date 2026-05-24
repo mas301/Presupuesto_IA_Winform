@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Windows.Forms;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     internal static class Program
     {
@@ -28,7 +28,7 @@ namespace DevExpressTreeListDemo
                     }
                 }
 
-                Application.Run(new MainForm());
+                Application.Run(new PresupuestoIA());
             }
             catch (Exception ex)
             {

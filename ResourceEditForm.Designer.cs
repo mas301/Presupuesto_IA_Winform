@@ -1,4 +1,4 @@
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     partial class ResourceEditForm
     {
@@ -19,6 +19,8 @@ namespace DevExpressTreeListDemo
         private System.Windows.Forms.NumericUpDown nudRendimientoEquipos;
         private System.Windows.Forms.Label lblDiasDuracion;
         private System.Windows.Forms.NumericUpDown nudDiasDuracion;
+        private System.Windows.Forms.Label lblHorasJornal;
+        private System.Windows.Forms.NumericUpDown nudHorasJornal;
         private System.Windows.Forms.CheckBox chkIndependiente;
         private System.Windows.Forms.Button btnCrear;
         private System.Windows.Forms.Button btnGrabar;
@@ -51,6 +53,8 @@ namespace DevExpressTreeListDemo
             this.nudRendimientoEquipos = new System.Windows.Forms.NumericUpDown();
             this.lblDiasDuracion = new System.Windows.Forms.Label();
             this.nudDiasDuracion = new System.Windows.Forms.NumericUpDown();
+            this.lblHorasJornal = new System.Windows.Forms.Label();
+            this.nudHorasJornal = new System.Windows.Forms.NumericUpDown();
             this.chkIndependiente = new System.Windows.Forms.CheckBox();
             this.btnCrear = new System.Windows.Forms.Button();
             this.btnGrabar = new System.Windows.Forms.Button();
@@ -58,6 +62,7 @@ namespace DevExpressTreeListDemo
             ((System.ComponentModel.ISupportInitialize)(this.nudRendimientoManoObra)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudRendimientoEquipos)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudDiasDuracion)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudHorasJornal)).BeginInit();
             this.SuspendLayout();
             // 
             // lblTipoRecurso
@@ -220,43 +225,65 @@ namespace DevExpressTreeListDemo
             this.nudDiasDuracion.Size = new System.Drawing.Size(320, 20);
             this.nudDiasDuracion.TabIndex = 15;
             // 
+            // lblHorasJornal
+            // 
+            this.lblHorasJornal.AutoSize = true;
+            this.lblHorasJornal.Location = new System.Drawing.Point(16, 464);
+            this.lblHorasJornal.Name = "lblHorasJornal";
+            this.lblHorasJornal.Size = new System.Drawing.Size(72, 13);
+            this.lblHorasJornal.TabIndex = 16;
+            this.lblHorasJornal.Text = "Horas Jornal";
+            // 
+            // nudHorasJornal
+            // 
+            this.nudHorasJornal.DecimalPlaces = 5;
+            this.nudHorasJornal.Location = new System.Drawing.Point(19, 480);
+            this.nudHorasJornal.Maximum = new decimal(new int[] {
+            999999999,
+            0,
+            0,
+            0});
+            this.nudHorasJornal.Name = "nudHorasJornal";
+            this.nudHorasJornal.Size = new System.Drawing.Size(320, 20);
+            this.nudHorasJornal.TabIndex = 17;
+            // 
             // chkIndependiente
             // 
             this.chkIndependiente.AutoSize = true;
-            this.chkIndependiente.Location = new System.Drawing.Point(19, 460);
+            this.chkIndependiente.Location = new System.Drawing.Point(19, 508);
             this.chkIndependiente.Name = "chkIndependiente";
             this.chkIndependiente.Size = new System.Drawing.Size(94, 17);
-            this.chkIndependiente.TabIndex = 16;
+            this.chkIndependiente.TabIndex = 18;
             this.chkIndependiente.Text = "Independiente";
             this.chkIndependiente.UseVisualStyleBackColor = true;
             // 
             // btnCrear
             // 
             this.btnCrear.Enabled = false;
-            this.btnCrear.Location = new System.Drawing.Point(102, 493);
+            this.btnCrear.Location = new System.Drawing.Point(102, 541);
             this.btnCrear.Name = "btnCrear";
             this.btnCrear.Size = new System.Drawing.Size(75, 28);
-            this.btnCrear.TabIndex = 17;
+            this.btnCrear.TabIndex = 19;
             this.btnCrear.Text = "Crear";
             this.btnCrear.UseVisualStyleBackColor = true;
             this.btnCrear.Click += new System.EventHandler(this.btnCrear_Click);
             // 
             // btnGrabar
             // 
-            this.btnGrabar.Location = new System.Drawing.Point(183, 493);
+            this.btnGrabar.Location = new System.Drawing.Point(183, 541);
             this.btnGrabar.Name = "btnGrabar";
             this.btnGrabar.Size = new System.Drawing.Size(75, 28);
-            this.btnGrabar.TabIndex = 18;
+            this.btnGrabar.TabIndex = 20;
             this.btnGrabar.Text = "Grabar";
             this.btnGrabar.UseVisualStyleBackColor = true;
             this.btnGrabar.Click += new System.EventHandler(this.btnGrabar_Click);
             // 
             // btnCancelar
             // 
-            this.btnCancelar.Location = new System.Drawing.Point(264, 493);
+            this.btnCancelar.Location = new System.Drawing.Point(264, 541);
             this.btnCancelar.Name = "btnCancelar";
             this.btnCancelar.Size = new System.Drawing.Size(75, 28);
-            this.btnCancelar.TabIndex = 19;
+            this.btnCancelar.TabIndex = 21;
             this.btnCancelar.Text = "Cancelar";
             this.btnCancelar.UseVisualStyleBackColor = true;
             this.btnCancelar.Click += new System.EventHandler(this.btnCancelar_Click);
@@ -265,11 +292,13 @@ namespace DevExpressTreeListDemo
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(360, 537);
+            this.ClientSize = new System.Drawing.Size(360, 585);
             this.Controls.Add(this.btnCrear);
             this.Controls.Add(this.btnCancelar);
             this.Controls.Add(this.btnGrabar);
             this.Controls.Add(this.chkIndependiente);
+            this.Controls.Add(this.nudHorasJornal);
+            this.Controls.Add(this.lblHorasJornal);
             this.Controls.Add(this.nudDiasDuracion);
             this.Controls.Add(this.lblDiasDuracion);
             this.Controls.Add(this.nudRendimientoEquipos);
@@ -295,6 +324,7 @@ namespace DevExpressTreeListDemo
             ((System.ComponentModel.ISupportInitialize)(this.nudRendimientoManoObra)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudRendimientoEquipos)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudDiasDuracion)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudHorasJornal)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
         }

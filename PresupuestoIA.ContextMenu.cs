@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
-    public partial class MainForm
+    public partial class PresupuestoIA
     {
         private void treeList1_PopupMenuShowing(object sender, DevExpress.XtraTreeList.PopupMenuShowingEventArgs e)
         {
@@ -255,6 +255,7 @@ namespace DevExpressTreeListDemo
                 null,
                 null,
                 null,
+                null,
                 false,
                 false,
                 true,
@@ -279,6 +280,7 @@ namespace DevExpressTreeListDemo
                         form.RendimientoManoObra,
                         form.RendimientoEquipos,
                         form.DiasDuracion,
+                        form.HorasJornal,
                         form.Independiente);
 
                     resourceNamesById[createdResourceId] = form.RecursoTexto;
@@ -326,6 +328,7 @@ namespace DevExpressTreeListDemo
                 null,
                 null,
                 null,
+                null,
                 false,
                 true,
                 true,
@@ -345,6 +348,7 @@ namespace DevExpressTreeListDemo
                         form.RendimientoManoObra,
                         form.RendimientoEquipos,
                         form.DiasDuracion,
+                        form.HorasJornal,
                         form.Independiente);
 
                     resourceNamesById[createdResourceId] = form.RecursoTexto;
@@ -369,7 +373,6 @@ namespace DevExpressTreeListDemo
                 RefreshPartidaCalculationDataFromCatalog(catalogResources);
                 RecalculateNumericRules();
                 MarkPendingAutoSave();
-                treeList1.ExpandAll();
                 UpdateMoveActionsState(treeList1.FocusedNode);
             }
             catch (System.Data.DataException ex)
@@ -423,6 +426,7 @@ namespace DevExpressTreeListDemo
                 preloadFromNode && catalogResource != null ? catalogResource.Rendimiento : null,
                 preloadFromNode && catalogResource != null ? catalogResource.RendimientoEquipos : null,
                 preloadFromNode && catalogResource != null ? catalogResource.DiasDuracion : null,
+                preloadFromNode && catalogResource != null ? catalogResource.HorasJornal : null,
                 preloadFromNode && catalogResource != null ? catalogResource.Independiente : false,
                 !preloadFromNode,
                 false,
@@ -448,6 +452,7 @@ namespace DevExpressTreeListDemo
                             form.RendimientoManoObra,
                             form.RendimientoEquipos,
                             form.DiasDuracion,
+                            form.HorasJornal,
                             form.Independiente);
 
                         resourceNamesById[createdResourceId] = form.RecursoTexto;
@@ -476,6 +481,7 @@ namespace DevExpressTreeListDemo
                             form.RendimientoManoObra,
                             form.RendimientoEquipos,
                             form.DiasDuracion,
+                            form.HorasJornal,
                             form.Independiente);
 
                         resourceIdOverride = originalResourceId.Value;

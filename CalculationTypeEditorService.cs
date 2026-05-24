@@ -4,7 +4,7 @@ using DevExpress.XtraGrid.Views.Grid;
 using DevExpress.XtraTreeList;
 using DevExpress.XtraTreeList.Columns;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     internal sealed class CalculationTypeEditorService
     {

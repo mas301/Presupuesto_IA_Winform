@@ -2,12 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch DevExpressTreeListDemo (net48)",
+      "name": "Launch PresupuestoIA (net48)",
       "type": "clr",
       "request": "launch",
-      "program": "${workspaceFolder}/bin/x64/Debug/DevExpressTreeListDemo.exe",
+      "program": "${workspaceFolder}/bin/x64/Debug/PresupuestoIA.exe",
       "cwd": "${workspaceFolder}",
-      "preLaunchTask": "build-devexpress-demo"
+      "preLaunchTask": "build-presupuestoia"
     }
   ]
 }

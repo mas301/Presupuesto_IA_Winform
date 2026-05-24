@@ -4,9 +4,9 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Collections.Generic;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
-    public partial class MainForm
+    public partial class PresupuestoIA
     {
         private void treeList1_CustomColumnDisplayText(object sender, DevExpress.XtraTreeList.CustomColumnDisplayTextEventArgs e)
         {
@@ -16,8 +16,12 @@ namespace DevExpressTreeListDemo
             bool allowsCalculationDetail = IsCalculationType2Or3(e.Node);
             bool isPartida = resourceTypePolicy.IsPartida(e.Node);
             bool isCalculationType8 = IsCalculationType8(e.Node);
+            bool isCalculationType9 = IsCalculationType9(e.Node);
+            bool isCalculationType10 = IsCalculationType10(e.Node);
             if (!allowsCalculationDetail
                 && !isCalculationType8
+                && !isCalculationType9
+                && !isCalculationType10
                 && e.Column == columnHorasJornal)
             {
                 e.DisplayText = string.Empty;
@@ -25,6 +29,8 @@ namespace DevExpressTreeListDemo
             }
 
             if (e.Column == columnRendimiento
+                && !isCalculationType9
+                && !isCalculationType10
                 && (!allowsCalculationDetail || isPartida))
             {
                 e.DisplayText = string.Empty;
@@ -65,6 +71,8 @@ namespace DevExpressTreeListDemo
             bool isCalculationType5 = IsCalculationType5(e.Node);
             bool isCalculationType7 = IsCalculationType7(e.Node);
             bool isCalculationType8 = IsCalculationType8(e.Node);
+            bool isCalculationType9 = IsCalculationType9(e.Node);
+            bool isCalculationType10 = IsCalculationType10(e.Node);
             bool isSubpresupuesto = resourceTypePolicy.IsSubpresupuesto(e.Node);
             bool isReadOnlyCell = !e.Column.OptionsColumn.AllowEdit
                 || e.Column == columnValorTotal
@@ -79,7 +87,9 @@ namespace DevExpressTreeListDemo
                 || (e.Column == columnCantidadTotal && allowsCalculationDetail)
                 || (e.Column == columnCantidadTotal && isCalculationType5)
                 || (e.Column == columnCantidadTotal && isCalculationType8)
-                || (e.Column == columnCantidad && !isCalculationType5 && !(isPartida && isCalculationType7) && !allowsCalculationDetail && !isCalculationType8)
+                || (e.Column == columnCantidadTotal && isCalculationType9)
+                || (e.Column == columnCantidadTotal && isCalculationType10)
+                || (e.Column == columnCantidad && !isCalculationType5 && !(isPartida && isCalculationType7) && !allowsCalculationDetail && !isCalculationType8 && !isCalculationType9 && !isCalculationType10)
                 || (e.Column == columnPesoUnitario && !isCalculationType5)
                 || (e.Column == columnDiasDuracion && !isPartida);
 
@@ -157,10 +167,18 @@ namespace DevExpressTreeListDemo
                 && !(isPartida && IsCalculationType7(treeList1.FocusedNode))
                 && !allowsCalculationDetail
                 && !IsCalculationType8(treeList1.FocusedNode)
+                && !IsCalculationType9(treeList1.FocusedNode)
+                && !IsCalculationType10(treeList1.FocusedNode)
                 && column == columnCantidad)
                 e.Cancel = true;
 
             if (column == columnCantidadTotal && IsCalculationType8(treeList1.FocusedNode))
+                e.Cancel = true;
+
+            if (column == columnCantidadTotal && IsCalculationType9(treeList1.FocusedNode))
+                e.Cancel = true;
+
+            if (column == columnCantidadTotal && IsCalculationType10(treeList1.FocusedNode))
                 e.Cancel = true;
 
             if (column == columnDiasDuracion && !isPartida)
@@ -548,6 +566,24 @@ namespace DevExpressTreeListDemo
 
             int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
             return calculationType.HasValue && calculationType.Value == 8;
+        }
+
+        private bool IsCalculationType9(TreeListNode node)
+        {
+            if (node == null)
+                return false;
+
+            int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
+            return calculationType.HasValue && calculationType.Value == 9;
+        }
+
+        private bool IsCalculationType10(TreeListNode node)
+        {
+            if (node == null)
+                return false;
+
+            int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
+            return calculationType.HasValue && calculationType.Value == 10;
         }
 
         private int? ResolveResourceIdFromNodeValue(TreeListNode node, object resourceValue)

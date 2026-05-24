@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
-    public partial class MainForm
+    public partial class PresupuestoIA
     {
         private void LoadBudgetTree()
         {
@@ -26,11 +26,11 @@ namespace DevExpressTreeListDemo
 
             suppressPersistence = true;
             treeList1.BeginUnboundLoad();
+            var nodeById = new Dictionary<int, TreeListNode>();
             try
             {
                 treeList1.Nodes.Clear();
 
-                var nodeById = new Dictionary<int, TreeListNode>();
                 for (int i = 0; i < items.Count; i++)
                 {
                     var item = items[i];
@@ -70,6 +70,27 @@ namespace DevExpressTreeListDemo
             finally
             {
                 treeList1.EndUnboundLoad();
+                suppressPersistence = false;
+            }
+
+            // Restaurar estado expandido/colapsado despues de EndUnboundLoad para que tome efecto.
+            suppressPersistence = true;
+            try
+            {
+                var itemsById = new Dictionary<int, RecursoPresupuestoDto>();
+                for (int i = 0; i < items.Count; i++)
+                    itemsById[items[i].RecursoxPresupuestoId] = items[i];
+
+                foreach (KeyValuePair<int, TreeListNode> entry in nodeById)
+                {
+                    if (!entry.Value.HasChildren)
+                        continue;
+                    if (itemsById.TryGetValue(entry.Key, out RecursoPresupuestoDto data))
+                        entry.Value.Expanded = data.Expandido;
+                }
+            }
+            finally
+            {
                 suppressPersistence = false;
             }
 
@@ -184,7 +205,8 @@ namespace DevExpressTreeListDemo
                 DiasDuracion = ToNullableDecimal(node.GetValue(columnDiasDuracion)),
                 CantidadTotal = ToNullableDecimal(node.GetValue(columnCantidadTotal)),
                 ValorUnitario = ToNullableDecimal(node.GetValue(columnValorUnitario)),
-                ValorTotal = ToNullableDecimal(node.GetValue(columnValorTotal))
+                ValorTotal = ToNullableDecimal(node.GetValue(columnValorTotal)),
+                Expandido = node.Expanded
             });
 
             for (int i = 0; i < node.Nodes.Count; i++)

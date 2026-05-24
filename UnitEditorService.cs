@@ -4,7 +4,7 @@ using DevExpress.XtraTreeList;
 using DevExpress.XtraTreeList.Columns;
 using System.Data;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     internal sealed class UnitEditorService
     {

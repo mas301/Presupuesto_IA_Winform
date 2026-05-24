@@ -1,6 +1,6 @@
 using System;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
     public sealed class EditableSettingAttribute : Attribute

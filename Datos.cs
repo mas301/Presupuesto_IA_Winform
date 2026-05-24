@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     public sealed class TipoRecursoDto
     {
@@ -25,6 +25,7 @@ namespace DevExpressTreeListDemo
         public decimal? Rendimiento { get; set; }
         public decimal? RendimientoEquipos { get; set; }
         public decimal? DiasDuracion { get; set; }
+        public decimal? HorasJornal { get; set; }
         public bool Independiente { get; set; }
     }
 
@@ -57,6 +58,7 @@ namespace DevExpressTreeListDemo
         public decimal? CantidadTotal { get; set; }
         public decimal? ValorUnitario { get; set; }
         public decimal? ValorTotal { get; set; }
+        public bool Expandido { get; set; }
     }
 
     public sealed class RecursoPartidaDto
@@ -84,7 +86,29 @@ namespace DevExpressTreeListDemo
 
     public static class Datos
     {
-        private const string ConnectionString = "Data Source=caleb.pe;Initial Catalog=dlk;User Id=sadlk;Password=Mauricio2004;TrustServerCertificate=True;Encrypt=True;";
+        private const string DefaultConnectionString = "Data Source=caleb.pe;Initial Catalog=dlk;User Id=sadlk;Password=Mauricio2004;TrustServerCertificate=True;Encrypt=True;";
+
+        private static string connectionString = DefaultConnectionString;
+
+        /// <summary>
+        /// Cadena de conexion usada por todas las operaciones de datos.
+        /// Configurable desde el host (ver <see cref="Configure(string)"/>).
+        /// </summary>
+        public static string ConnectionString
+        {
+            get { return connectionString; }
+        }
+
+        /// <summary>
+        /// Permite a una aplicacion host configurar la cadena de conexion
+        /// antes de usar la libreria o de abrir el formulario PresupuestoIA.
+        /// </summary>
+        public static void Configure(string connectionString)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new ArgumentException("La cadena de conexion no puede estar vacia.", nameof(connectionString));
+            Datos.connectionString = connectionString;
+        }
 
         public static List<TipoRecursoDto> ObtenerTiposRecurso(int empresaId, bool activa)
         {
@@ -164,6 +188,7 @@ ORDER BY Recurso;";
                         int rendimientoOrdinal = TryGetOrdinal(reader, "Rendimiento", "RendimientoManoObra");
                         int rendimientoEquiposOrdinal = TryGetOrdinal(reader, "RendimientoEquipos");
                         int diasDuracionOrdinal = reader.GetOrdinal("DiasDuracion");
+                        int horasJornalOrdinal = TryGetOrdinal(reader, "HorasJornal");
                         int independienteOrdinal = TryGetOrdinal(reader, "Independiente");
 
                         while (reader.Read())
@@ -188,6 +213,9 @@ ORDER BY Recurso;";
                                     ? (decimal?)Convert.ToDecimal(reader.GetValue(rendimientoEquiposOrdinal))
                                     : null,
                                 DiasDuracion = reader.IsDBNull(diasDuracionOrdinal) ? (decimal?)null : reader.GetDecimal(diasDuracionOrdinal),
+                                HorasJornal = horasJornalOrdinal >= 0 && !reader.IsDBNull(horasJornalOrdinal)
+                                    ? (decimal?)Convert.ToDecimal(reader.GetValue(horasJornalOrdinal))
+                                    : null,
                                 Independiente = independienteOrdinal >= 0 && !reader.IsDBNull(independienteOrdinal)
                                     && Convert.ToBoolean(reader.GetValue(independienteOrdinal))
                             });
@@ -264,7 +292,7 @@ ORDER BY Unidad;";
         public static List<RecursoPresupuestoDto> ObtenerRecursosPresupuesto(int empresaId, int presupuestoId)
         {
             const string sql = @"
-    SELECT EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoId, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal
+    SELECT EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoId, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal, Expandido
 FROM PreRecursoxPresupuesto
     WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId
 ORDER BY Nivel, Orden, RecursoxPresupuestoId;";
@@ -302,6 +330,7 @@ ORDER BY Nivel, Orden, RecursoxPresupuestoId;";
                         int cantidadTotalOrdinal = reader.GetOrdinal("CantidadTotal");
                         int valorUnitarioOrdinal = reader.GetOrdinal("ValorUnitario");
                         int valorTotalOrdinal = reader.GetOrdinal("ValorTotal");
+                        int expandidoOrdinal = TryGetOrdinal(reader, "Expandido");
 
                         while (reader.Read())
                         {
@@ -329,7 +358,8 @@ ORDER BY Nivel, Orden, RecursoxPresupuestoId;";
                                 DiasDuracion = reader.IsDBNull(diasDuracionOrdinal) ? (decimal?)null : reader.GetDecimal(diasDuracionOrdinal),
                                 CantidadTotal = reader.IsDBNull(cantidadTotalOrdinal) ? (decimal?)null : reader.GetDecimal(cantidadTotalOrdinal),
                                 ValorUnitario = reader.IsDBNull(valorUnitarioOrdinal) ? (decimal?)null : reader.GetDecimal(valorUnitarioOrdinal),
-                                ValorTotal = reader.IsDBNull(valorTotalOrdinal) ? (decimal?)null : reader.GetDecimal(valorTotalOrdinal)
+                                ValorTotal = reader.IsDBNull(valorTotalOrdinal) ? (decimal?)null : reader.GetDecimal(valorTotalOrdinal),
+                                Expandido = expandidoOrdinal >= 0 && !reader.IsDBNull(expandidoOrdinal) && reader.GetBoolean(expandidoOrdinal)
                             });
                         }
                     }
@@ -564,6 +594,7 @@ END";
             decimal? rendimiento,
             decimal? rendimientoEquipos,
             decimal? diasDuracion,
+            decimal? horasJornal,
             bool independiente)
         {
             if (string.IsNullOrWhiteSpace(recurso))
@@ -582,6 +613,7 @@ DECLARE @HasTipoCalculo bit = CASE WHEN COL_LENGTH('PreRecurso', 'TipoCalculoId'
 DECLARE @HasRendimiento bit = CASE WHEN COL_LENGTH('PreRecurso', 'Rendimiento') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoManoObra bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoManoObra') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoEquipos bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoEquipos') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasHorasJornal bit = CASE WHEN COL_LENGTH('PreRecurso', 'HorasJornal') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasIndependiente bit = CASE WHEN COL_LENGTH('PreRecurso', 'Independiente') IS NOT NULL THEN 1 ELSE 0 END;
 
 DECLARE @Sql nvarchar(max) = N'
@@ -600,6 +632,9 @@ IF @HasRendimientoEquipos = 1
     SET @Sql += N', RendimientoEquipos';
 
 SET @Sql += N', DiasDuracion';
+
+IF @HasHorasJornal = 1
+    SET @Sql += N', HorasJornal';
 
 IF @HasIndependiente = 1
     SET @Sql += N', Independiente';
@@ -620,6 +655,9 @@ IF @HasRendimientoEquipos = 1
 
 SET @Sql += N', @DiasDuracion';
 
+IF @HasHorasJornal = 1
+    SET @Sql += N', @HorasJornal';
+
 IF @HasIndependiente = 1
     SET @Sql += N', @Independiente';
 
@@ -628,7 +666,7 @@ SELECT CAST(SCOPE_IDENTITY() AS int);';
 
 EXEC sp_executesql
     @Sql,
-    N'@EmpresaId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @RendimientoEquipos decimal(18,5), @DiasDuracion decimal(18,5), @Independiente bit',
+    N'@EmpresaId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @RendimientoEquipos decimal(18,5), @DiasDuracion decimal(18,5), @HorasJornal decimal(18,5), @Independiente bit',
     @EmpresaId = @EmpresaId,
     @TipoRecursoId = @TipoRecursoId,
     @Recurso = @Recurso,
@@ -637,6 +675,7 @@ EXEC sp_executesql
     @Rendimiento = @Rendimiento,
     @RendimientoEquipos = @RendimientoEquipos,
     @DiasDuracion = @DiasDuracion,
+    @HorasJornal = @HorasJornal,
     @Independiente = @Independiente;";
 
             const string nextIdSql = @"
@@ -649,6 +688,7 @@ DECLARE @HasTipoCalculo bit = CASE WHEN COL_LENGTH('PreRecurso', 'TipoCalculoId'
 DECLARE @HasRendimiento bit = CASE WHEN COL_LENGTH('PreRecurso', 'Rendimiento') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoManoObra bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoManoObra') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoEquipos bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoEquipos') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasHorasJornal bit = CASE WHEN COL_LENGTH('PreRecurso', 'HorasJornal') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasIndependiente bit = CASE WHEN COL_LENGTH('PreRecurso', 'Independiente') IS NOT NULL THEN 1 ELSE 0 END;
 
 DECLARE @Sql nvarchar(max) = N'
@@ -667,6 +707,9 @@ IF @HasRendimientoEquipos = 1
     SET @Sql += N', RendimientoEquipos';
 
 SET @Sql += N', DiasDuracion';
+
+IF @HasHorasJornal = 1
+    SET @Sql += N', HorasJornal';
 
 IF @HasIndependiente = 1
     SET @Sql += N', Independiente';
@@ -687,6 +730,9 @@ IF @HasRendimientoEquipos = 1
 
 SET @Sql += N', @DiasDuracion';
 
+IF @HasHorasJornal = 1
+    SET @Sql += N', @HorasJornal';
+
 IF @HasIndependiente = 1
     SET @Sql += N', @Independiente';
 
@@ -694,7 +740,7 @@ SET @Sql += N');';
 
 EXEC sp_executesql
     @Sql,
-    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @RendimientoEquipos decimal(18,5), @DiasDuracion decimal(18,5), @Independiente bit',
+    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @RendimientoEquipos decimal(18,5), @DiasDuracion decimal(18,5), @HorasJornal decimal(18,5), @Independiente bit',
     @EmpresaId = @EmpresaId,
     @RecursoId = @RecursoId,
     @TipoRecursoId = @TipoRecursoId,
@@ -704,6 +750,7 @@ EXEC sp_executesql
     @Rendimiento = @Rendimiento,
     @RendimientoEquipos = @RendimientoEquipos,
     @DiasDuracion = @DiasDuracion,
+    @HorasJornal = @HorasJornal,
     @Independiente = @Independiente;";
 
             try
@@ -733,6 +780,7 @@ EXEC sp_executesql
                                     rendimiento,
                                     rendimientoEquipos,
                                     diasDuracion,
+                                    horasJornal,
                                     independiente);
                                 transaction.Commit();
                                 return existingResourceId;
@@ -772,6 +820,11 @@ EXEC sp_executesql
                                 diasDuracionParameter.Scale = 5;
                                 diasDuracionParameter.Value = diasDuracion.HasValue ? (object)diasDuracion.Value : DBNull.Value;
 
+                                SqlParameter horasJornalParameter = insertCommand.Parameters.Add("@HorasJornal", SqlDbType.Decimal);
+                                horasJornalParameter.Precision = 18;
+                                horasJornalParameter.Scale = 5;
+                                horasJornalParameter.Value = horasJornal.HasValue ? (object)horasJornal.Value : DBNull.Value;
+
                                 insertCommand.Parameters.Add("@Independiente", SqlDbType.Bit).Value = independiente;
 
                                 recursoId = Convert.ToInt32(insertCommand.ExecuteScalar());
@@ -810,6 +863,11 @@ EXEC sp_executesql
                                 diasDuracionParameter.Scale = 5;
                                 diasDuracionParameter.Value = diasDuracion.HasValue ? (object)diasDuracion.Value : DBNull.Value;
 
+                                SqlParameter horasJornalParameter = insertCommand.Parameters.Add("@HorasJornal", SqlDbType.Decimal);
+                                horasJornalParameter.Precision = 18;
+                                horasJornalParameter.Scale = 5;
+                                horasJornalParameter.Value = horasJornal.HasValue ? (object)horasJornal.Value : DBNull.Value;
+
                                 insertCommand.Parameters.Add("@Independiente", SqlDbType.Bit).Value = independiente;
 
                                 insertCommand.ExecuteNonQuery();
@@ -843,6 +901,7 @@ EXEC sp_executesql
             decimal? rendimiento,
             decimal? rendimientoEquipos,
             decimal? diasDuracion,
+            decimal? horasJornal,
             bool independiente)
         {
             if (string.IsNullOrWhiteSpace(recurso))
@@ -853,6 +912,7 @@ DECLARE @HasTipoCalculo bit = CASE WHEN COL_LENGTH('PreRecurso', 'TipoCalculoId'
 DECLARE @HasRendimiento bit = CASE WHEN COL_LENGTH('PreRecurso', 'Rendimiento') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoManoObra bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoManoObra') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoEquipos bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoEquipos') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasHorasJornal bit = CASE WHEN COL_LENGTH('PreRecurso', 'HorasJornal') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasIndependiente bit = CASE WHEN COL_LENGTH('PreRecurso', 'Independiente') IS NOT NULL THEN 1 ELSE 0 END;
 
 DECLARE @Sql nvarchar(max) = N'
@@ -875,6 +935,9 @@ IF @HasRendimientoEquipos = 1
 
 SET @Sql += N', DiasDuracion = @DiasDuracion';
 
+IF @HasHorasJornal = 1
+    SET @Sql += N', HorasJornal = @HorasJornal';
+
 IF @HasIndependiente = 1
     SET @Sql += N', Independiente = @Independiente';
 
@@ -883,7 +946,7 @@ WHERE EmpresaId = @EmpresaId AND RecursoId = @RecursoId;';
 
 EXEC sp_executesql
     @Sql,
-    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @RendimientoEquipos decimal(18,5), @DiasDuracion decimal(18,5), @Independiente bit',
+    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @RendimientoEquipos decimal(18,5), @DiasDuracion decimal(18,5), @HorasJornal decimal(18,5), @Independiente bit',
     @EmpresaId = @EmpresaId,
     @RecursoId = @RecursoId,
     @TipoRecursoId = @TipoRecursoId,
@@ -893,6 +956,7 @@ EXEC sp_executesql
     @Rendimiento = @Rendimiento,
     @RendimientoEquipos = @RendimientoEquipos,
     @DiasDuracion = @DiasDuracion,
+    @HorasJornal = @HorasJornal,
     @Independiente = @Independiente;";
 
             try
@@ -922,6 +986,11 @@ EXEC sp_executesql
                     diasDuracionParameter.Scale = 5;
                     diasDuracionParameter.Value = diasDuracion.HasValue ? (object)diasDuracion.Value : DBNull.Value;
 
+                    SqlParameter horasJornalParameter = command.Parameters.Add("@HorasJornal", SqlDbType.Decimal);
+                    horasJornalParameter.Precision = 18;
+                    horasJornalParameter.Scale = 5;
+                    horasJornalParameter.Value = horasJornal.HasValue ? (object)horasJornal.Value : DBNull.Value;
+
                     command.Parameters.Add("@Independiente", SqlDbType.Bit).Value = independiente;
 
                     connection.Open();
@@ -944,12 +1013,12 @@ EXEC sp_executesql
                 throw new ArgumentNullException("items");
 
             const string insertIdentitySql = @"
-INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal)
- VALUES (@EmpresaId, @PresupuestoId, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cantidad, @PesoUnitario, @DiasDuracion, @CantidadTotal, @ValorUnitario, @ValorTotal);
+INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal, Expandido)
+ VALUES (@EmpresaId, @PresupuestoId, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cantidad, @PesoUnitario, @DiasDuracion, @CantidadTotal, @ValorUnitario, @ValorTotal, @Expandido);
  SELECT CAST(SCOPE_IDENTITY() AS int);";
             const string insertRegularSql = @"
-INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, RecursoxPresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal)
- VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cantidad, @PesoUnitario, @DiasDuracion, @CantidadTotal, @ValorUnitario, @ValorTotal);";
+INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, RecursoxPresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal, Expandido)
+ VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cantidad, @PesoUnitario, @DiasDuracion, @CantidadTotal, @ValorUnitario, @ValorTotal, @Expandido);";
             const string updateSql = @"
  UPDATE PreRecursoxPresupuesto
  SET Alias = @Alias,
@@ -967,7 +1036,8 @@ INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, RecursoxPresupuest
      DiasDuracion = @DiasDuracion,
      CantidadTotal = @CantidadTotal,
      ValorUnitario = @ValorUnitario,
-     ValorTotal = @ValorTotal
+     ValorTotal = @ValorTotal,
+     Expandido = @Expandido
  WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPresupuestoId = @Id;";
             const string deleteByIdSql = @"
 DELETE FROM PreRecursoxPresupuesto
@@ -1036,6 +1106,7 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPres
                                         updateCommand.Parameters.Add("@CantidadTotal", SqlDbType.Decimal).Value = item.CantidadTotal.HasValue ? (object)item.CantidadTotal.Value : DBNull.Value;
                                         updateCommand.Parameters.Add("@ValorUnitario", SqlDbType.Decimal).Value = item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : DBNull.Value;
                                         updateCommand.Parameters.Add("@ValorTotal", SqlDbType.Decimal).Value = item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@Expandido", SqlDbType.Bit).Value = item.Expandido;
                                         updateCommand.ExecuteNonQuery();
                                     }
                                 }
@@ -1068,6 +1139,7 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPres
                                     insertCommand.Parameters.Add("@CantidadTotal", SqlDbType.Decimal).Value = item.CantidadTotal.HasValue ? (object)item.CantidadTotal.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorUnitario", SqlDbType.Decimal).Value = item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorTotal", SqlDbType.Decimal).Value = item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : DBNull.Value;
+                                    insertCommand.Parameters.Add("@Expandido", SqlDbType.Bit).Value = item.Expandido;
                                     newPersistedId = Convert.ToInt32(insertCommand.ExecuteScalar());
                                 }
                             }
@@ -1096,6 +1168,7 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPres
                                     insertCommand.Parameters.Add("@CantidadTotal", SqlDbType.Decimal).Value = item.CantidadTotal.HasValue ? (object)item.CantidadTotal.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorUnitario", SqlDbType.Decimal).Value = item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorTotal", SqlDbType.Decimal).Value = item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : DBNull.Value;
+                                    insertCommand.Parameters.Add("@Expandido", SqlDbType.Bit).Value = item.Expandido;
                                     insertCommand.ExecuteNonQuery();
                                 }
                             }
@@ -1299,7 +1372,7 @@ SELECT COLUMNPROPERTY(OBJECT_ID('PreRecursoxPresupuesto'), 'RecursoxPresupuestoI
         private static List<RecursoPresupuestoDto> ObtenerRecursosPresupuesto(SqlConnection connection, SqlTransaction transaction, int empresaId, int presupuestoId)
         {
             const string sql = @"
-SELECT EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoId, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal
+SELECT EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoId, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal, Expandido
 FROM PreRecursoxPresupuesto
 WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
 
@@ -1326,6 +1399,7 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
                     int cantidadTotalOrdinal = reader.GetOrdinal("CantidadTotal");
                     int valorUnitarioOrdinal = reader.GetOrdinal("ValorUnitario");
                     int valorTotalOrdinal = reader.GetOrdinal("ValorTotal");
+                    int expandidoOrdinal = TryGetOrdinal(reader, "Expandido");
 
                     while (reader.Read())
                     {
@@ -1351,7 +1425,8 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
                             DiasDuracion = reader.IsDBNull(diasDuracionOrdinal) ? (decimal?)null : reader.GetDecimal(diasDuracionOrdinal),
                             CantidadTotal = reader.IsDBNull(cantidadTotalOrdinal) ? (decimal?)null : reader.GetDecimal(cantidadTotalOrdinal),
                             ValorUnitario = reader.IsDBNull(valorUnitarioOrdinal) ? (decimal?)null : reader.GetDecimal(valorUnitarioOrdinal),
-                            ValorTotal = reader.IsDBNull(valorTotalOrdinal) ? (decimal?)null : reader.GetDecimal(valorTotalOrdinal)
+                            ValorTotal = reader.IsDBNull(valorTotalOrdinal) ? (decimal?)null : reader.GetDecimal(valorTotalOrdinal),
+                            Expandido = expandidoOrdinal >= 0 && !reader.IsDBNull(expandidoOrdinal) && reader.GetBoolean(expandidoOrdinal)
                         });
                     }
                 }
@@ -1492,7 +1567,8 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
                 || existing.DiasDuracion != incoming.DiasDuracion
                 || existing.CantidadTotal != incoming.CantidadTotal
                 || existing.ValorUnitario != incoming.ValorUnitario
-                || existing.ValorTotal != incoming.ValorTotal;
+                || existing.ValorTotal != incoming.ValorTotal
+                || existing.Expandido != incoming.Expandido;
         }
 
         private static List<RecursoPartidaStoredRow> ObtenerRecursosPartida(SqlConnection connection, SqlTransaction transaction, int empresaId, HashSet<int> partidaIds)

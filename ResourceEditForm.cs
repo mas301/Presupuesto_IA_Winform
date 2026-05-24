@@ -4,7 +4,7 @@ using System.Linq;
 using System.Windows.Forms;
 using System.Collections;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     public partial class ResourceEditForm : Form
     {
@@ -26,6 +26,7 @@ namespace DevExpressTreeListDemo
         public decimal? RendimientoManoObra { get; private set; }
         public decimal? RendimientoEquipos { get; private set; }
         public decimal? DiasDuracion { get; private set; }
+        public decimal? HorasJornal { get; private set; }
         public bool Independiente { get; private set; }
         public bool CreateNewResourceRequested { get; private set; }
 
@@ -42,6 +43,7 @@ namespace DevExpressTreeListDemo
             decimal? initialRendimientoManoObra,
             decimal? initialRendimientoEquipos,
             decimal? initialDiasDuracion,
+            decimal? initialHorasJornal,
             bool initialIndependiente,
             bool startBlank,
             bool requireTypeAndResource,
@@ -65,6 +67,7 @@ namespace DevExpressTreeListDemo
                 initialRendimientoManoObra,
                 initialRendimientoEquipos,
                 initialDiasDuracion,
+                initialHorasJornal,
                 initialIndependiente,
                 startBlank);
         }
@@ -141,6 +144,7 @@ namespace DevExpressTreeListDemo
             decimal? initialRendimientoManoObra,
             decimal? initialRendimientoEquipos,
             decimal? initialDiasDuracion,
+            decimal? initialHorasJornal,
             bool initialIndependiente,
             bool startBlank)
         {
@@ -159,6 +163,7 @@ namespace DevExpressTreeListDemo
                 nudRendimientoManoObra.Value = 0m;
                 nudRendimientoEquipos.Value = 0m;
                 nudDiasDuracion.Value = 0m;
+                nudHorasJornal.Value = 0m;
                 chkIndependiente.Checked = initialIndependiente;
                 originalRecursoTextoNormalized = string.Empty;
                 UpdateFieldVisibilityByResourceType();
@@ -199,6 +204,7 @@ namespace DevExpressTreeListDemo
             nudRendimientoManoObra.Value = NormalizeDecimal(initialRendimientoManoObra);
             nudRendimientoEquipos.Value = NormalizeDecimal(initialRendimientoEquipos);
             nudDiasDuracion.Value = NormalizeDecimal(initialDiasDuracion);
+            nudHorasJornal.Value = NormalizeDecimal(initialHorasJornal);
             chkIndependiente.Checked = initialIndependiente;
 
             UpdateFieldVisibilityByResourceType();
@@ -332,12 +338,14 @@ namespace DevExpressTreeListDemo
                 RendimientoManoObra = nudRendimientoManoObra.Value;
                 RendimientoEquipos = nudRendimientoEquipos.Value;
                 DiasDuracion = nudDiasDuracion.Value;
+                HorasJornal = nudHorasJornal.Value;
             }
             else
             {
                 RendimientoManoObra = null;
                 RendimientoEquipos = null;
                 DiasDuracion = null;
+                HorasJornal = null;
             }
 
             Independiente = chkIndependiente.Checked;
@@ -397,12 +405,14 @@ namespace DevExpressTreeListDemo
                 RendimientoManoObra = nudRendimientoManoObra.Value;
                 RendimientoEquipos = nudRendimientoEquipos.Value;
                 DiasDuracion = nudDiasDuracion.Value;
+                HorasJornal = nudHorasJornal.Value;
             }
             else
             {
                 RendimientoManoObra = null;
                 RendimientoEquipos = null;
                 DiasDuracion = null;
+                HorasJornal = null;
             }
 
             Independiente = chkIndependiente.Checked;
@@ -454,6 +464,8 @@ namespace DevExpressTreeListDemo
             nudRendimientoEquipos.Visible = isPartida;
             lblDiasDuracion.Visible = isPartida;
             nudDiasDuracion.Visible = isPartida;
+            lblHorasJornal.Visible = isPartida;
+            nudHorasJornal.Visible = isPartida;
         }
 
         private bool IsSelectedType(string typeName)

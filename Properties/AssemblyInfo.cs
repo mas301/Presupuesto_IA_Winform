@@ -1,11 +1,11 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("DevExpressTreeListDemo")]
+[assembly: AssemblyTitle("PresupuestoIA")]
 [assembly: AssemblyDescription("Ejemplo WinForms .NET Framework 4.8 usando DevExpress XtraTreeList")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("DevExpressTreeListDemo")]
+[assembly: AssemblyProduct("PresupuestoIA")]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

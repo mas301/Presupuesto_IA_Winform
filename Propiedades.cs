@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Forms;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     public partial class Propiedades : Form
     {

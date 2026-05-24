@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 
-namespace DevExpressTreeListDemo
+namespace PresupuestoIA
 {
     // Wraps an object exposing only its [EditableSetting]-decorated properties
     // to a PropertyGrid. Changes are buffered locally so the caller can either
