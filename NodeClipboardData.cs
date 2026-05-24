@@ -4,7 +4,7 @@ namespace DevExpressTreeListDemo
 {
     internal sealed class NodeClipboardData
     {
-        public object[] Values { get; set; }
+        public Dictionary<string, object> Values { get; set; }
 
         public PartidaCalculationData PartidaCalculationData { get; set; }
 

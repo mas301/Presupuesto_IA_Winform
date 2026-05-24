@@ -1,4 +1,5 @@
 using DevExpress.XtraEditors.Repository;
+using DevExpress.XtraTreeList.Columns;
 using DevExpress.XtraTreeList.Nodes;
 using System;
 using System.Collections.Generic;
@@ -17,19 +18,43 @@ namespace DevExpressTreeListDemo
     {
         private const int EmpresaId = 1;
         private const int PresupuestoId = 1;
-        private const int ResourceTypeColumnIndex = 1;
-        private const int ResourceTypeValueIndex = 1;
-        private const int ResourceColumnIndex = 2;
-        private const int UnitColumnIndex = 3;
-        private const int CalculationTypeColumnIndex = 4;
-        private const int HoursPerDayColumnIndex = 5;
-        private const int PerformanceColumnIndex = 6;
-        private const int CrewColumnIndex = 7;
-        private const int QuantityColumnIndex = 8;
-        private const int UnitValueColumnIndex = 9;
-        private const int TotalValueColumnIndex = 10;
-        private const int AliasColumnIndex = 11;
         private const int DefaultGrabacionAutomaticaSegundos = 300;
+
+        // FieldName constants for tree list columns (must match Designer FieldName values)
+        internal static class ColumnNames
+        {
+            public const string Item = "Item";
+            public const string TipoRecurso = "TipoRecurso";
+            public const string Recurso = "Recurso";
+            public const string Independiente = "Independiente";
+            public const string Unidad = "Unidad";
+            public const string TipoCalculo = "TipoCalculo";
+            public const string HorasJornal = "HorasJornal";
+            public const string Rendimiento = "Rendimiento";
+            public const string Cantidad = "Cantidad";
+            public const string PesoUnitario = "PesoUnitario";
+            public const string DiasDuracion = "DiasDuracion";
+            public const string CantidadTotal = "CantidadTotal";
+            public const string ValorUnitario = "ValorUnitario";
+            public const string ValorTotal = "ValorTotal";
+            public const string Alias = "Alias";
+        }
+
+        // TreeListColumn references resolved in ConfigureColumnEditors via FieldName
+        private TreeListColumn columnTipoRecurso;
+        private TreeListColumn columnRecurso;
+        private TreeListColumn columnIndependiente;
+        private TreeListColumn columnUnidad;
+        private TreeListColumn columnTipoCalculo;
+        private TreeListColumn columnHorasJornal;
+        private TreeListColumn columnRendimiento;
+        private TreeListColumn columnCantidad;
+        private TreeListColumn columnPesoUnitario;
+        private TreeListColumn columnDiasDuracion;
+        private TreeListColumn columnCantidadTotal;
+        private TreeListColumn columnValorUnitario;
+        private TreeListColumn columnValorTotal;
+        private TreeListColumn columnAlias;
 
         private ResourceTypePolicy resourceTypePolicy;
         private ResourceTypeEditorService resourceTypeEditorService;
@@ -48,19 +73,23 @@ namespace DevExpressTreeListDemo
         private bool columnaTipoCalculoVisible = true;
         private bool columnaRendimientoVisible = true;
         private bool columnaHorasJornalVisible = true;
-        private bool columnaCuadrillaVisible = true;
+        private bool columnaCantidadVisible = true;
+        private bool columnaPesoUnitarioVisible = true;
+        private bool columnaDiasDuracionVisible = true;
         private Dictionary<int, string> resourceNamesById;
         private Dictionary<int, int?> resourceUnitIdsByResourceId;
         private Dictionary<int, int?> resourceCalculationTypeIdsByResourceId;
         private Dictionary<int, RecursoDto> resourcesById;
         private Dictionary<int, string> unitDisplayNamesById;
 
+        [EditableSetting("General", "GrabacionAutomatica", "Intervalo en segundos entre grabaciones automaticas. Si es 0, se desactiva la grabacion automatica.")]
         public int GrabacionAutomatica
         {
             get => grabacionAutomatica;
             set => grabacionAutomatica = value < 0 ? 0 : value;
         }
 
+        [EditableSetting("General", "InicioNumeracion", "Numero inicial para la numeracion de filas. Por defecto es 1. Puede ser 0, 10, etc.")]
         public int InicioNumeracion
         {
             get => inicioNumeracion;
@@ -76,6 +105,7 @@ namespace DevExpressTreeListDemo
             }
         }
 
+        [EditableSetting("Columnas", "ColumnaTipoCalculoVisible", "Controla si la columna Tipo Calculo se muestra en el arbol principal.")]
         public bool ColumnaTipoCalculoVisible
         {
             get => columnaTipoCalculoVisible;
@@ -86,6 +116,7 @@ namespace DevExpressTreeListDemo
             }
         }
 
+        [EditableSetting("Columnas", "ColumnaRendimientoVisible", "Controla si la columna Rendimiento se muestra en el arbol principal.")]
         public bool ColumnaRendimientoVisible
         {
             get => columnaRendimientoVisible;
@@ -96,6 +127,7 @@ namespace DevExpressTreeListDemo
             }
         }
 
+        [EditableSetting("Columnas", "ColumnaHorasJornalVisible", "Controla si la columna Horas Jornal se muestra en el arbol principal.")]
         public bool ColumnaHorasJornalVisible
         {
             get => columnaHorasJornalVisible;
@@ -106,12 +138,35 @@ namespace DevExpressTreeListDemo
             }
         }
 
-        public bool ColumnaCuadrillaVisible
+        [EditableSetting("Columnas", "ColumnaCantidadVisible", "Controla si la columna Cantidad se muestra en el arbol principal.")]
+        public bool ColumnaCantidadVisible
         {
-            get => columnaCuadrillaVisible;
+            get => columnaCantidadVisible;
             set
             {
-                columnaCuadrillaVisible = value;
+                columnaCantidadVisible = value;
+                ApplyConfiguredColumnVisibility();
+            }
+        }
+
+        [EditableSetting("Columnas", "ColumnaPesoUnitarioVisible", "Controla si la columna Peso Unitario se muestra en el arbol principal.")]
+        public bool ColumnaPesoUnitarioVisible
+        {
+            get => columnaPesoUnitarioVisible;
+            set
+            {
+                columnaPesoUnitarioVisible = value;
+                ApplyConfiguredColumnVisibility();
+            }
+        }
+
+        [EditableSetting("Columnas", "ColumnaDiasDuracionVisible", "Controla si la columna DiasDuracion se muestra en el arbol principal.")]
+        public bool ColumnaDiasDuracionVisible
+        {
+            get => columnaDiasDuracionVisible;
+            set
+            {
+                columnaDiasDuracionVisible = value;
                 ApplyConfiguredColumnVisibility();
             }
         }
@@ -188,49 +243,65 @@ namespace DevExpressTreeListDemo
             for (int i = 0; i < treeList1.Columns.Count; i++)
                 treeList1.Columns[i].OptionsColumn.AllowEdit = false;
 
-            var resourceTypeColumn = treeList1.Columns[ResourceTypeColumnIndex];
-            resourceTypeColumn.Caption = "Tipo Recurso";
-            resourceTypeColumn.OptionsColumn.AllowEdit = true;
+            columnTipoRecurso = treeList1.Columns[ColumnNames.TipoRecurso];
+            columnTipoRecurso.Caption = "Tipo Recurso";
+            columnTipoRecurso.OptionsColumn.AllowEdit = true;
 
-            var resourceColumn = treeList1.Columns[ResourceColumnIndex];
-            resourceColumn.Caption = "Recurso";
-            resourceColumn.OptionsColumn.AllowEdit = true;
+            columnRecurso = treeList1.Columns[ColumnNames.Recurso];
+            columnRecurso.Caption = "Recurso";
+            columnRecurso.OptionsColumn.AllowEdit = true;
 
-            var quantityColumn = treeList1.Columns[QuantityColumnIndex];
-            quantityColumn.Caption = "Cantidad";
-            quantityColumn.OptionsColumn.AllowEdit = true;
+            columnIndependiente = treeList1.Columns[ColumnNames.Independiente];
+            columnIndependiente.Caption = "Independiente";
+            columnIndependiente.OptionsColumn.AllowEdit = false;
+            columnIndependiente.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
+            columnIndependiente.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
 
-            var calculationTypeColumn = treeList1.Columns[CalculationTypeColumnIndex];
-            calculationTypeColumn.Caption = "Tipo Calculo";
-            calculationTypeColumn.OptionsColumn.AllowEdit = false;
+            columnCantidadTotal = treeList1.Columns[ColumnNames.CantidadTotal];
+            columnCantidadTotal.Caption = "CantidadTotal";
+            columnCantidadTotal.OptionsColumn.AllowEdit = true;
 
-            var hoursPerDayColumn = treeList1.Columns[HoursPerDayColumnIndex];
-            hoursPerDayColumn.Caption = "Horas Jornal";
-            hoursPerDayColumn.OptionsColumn.AllowEdit = false;
+            columnTipoCalculo = treeList1.Columns[ColumnNames.TipoCalculo];
+            columnTipoCalculo.Caption = "Tipo Calculo";
+            columnTipoCalculo.OptionsColumn.AllowEdit = false;
 
-            var performanceColumn = treeList1.Columns[PerformanceColumnIndex];
-            performanceColumn.Caption = "Rendimiento";
-            performanceColumn.OptionsColumn.AllowEdit = true;
+            columnHorasJornal = treeList1.Columns[ColumnNames.HorasJornal];
+            columnHorasJornal.Caption = "Horas Jornal";
+            columnHorasJornal.OptionsColumn.AllowEdit = false;
 
-            var crewColumn = treeList1.Columns[CrewColumnIndex];
-            crewColumn.Caption = "Cuadrilla";
-            crewColumn.OptionsColumn.AllowEdit = true;
+            columnRendimiento = treeList1.Columns[ColumnNames.Rendimiento];
+            columnRendimiento.Caption = "Rendimiento";
+            columnRendimiento.OptionsColumn.AllowEdit = true;
+
+            columnCantidad = treeList1.Columns[ColumnNames.Cantidad];
+            columnCantidad.Caption = "Cantidad";
+            columnCantidad.OptionsColumn.AllowEdit = true;
+
+            columnPesoUnitario = treeList1.Columns[ColumnNames.PesoUnitario];
+            columnPesoUnitario.Caption = "Peso Unitario";
+            columnPesoUnitario.OptionsColumn.AllowEdit = true;
+
+            columnDiasDuracion = treeList1.Columns[ColumnNames.DiasDuracion];
+            columnDiasDuracion.Caption = "DiasDuracion";
+            columnDiasDuracion.OptionsColumn.AllowEdit = false;
 
             ApplyConfiguredColumnVisibility();
 
-            var unitValueColumn = treeList1.Columns[UnitValueColumnIndex];
-            unitValueColumn.Caption = "Valor Unitario";
-            unitValueColumn.OptionsColumn.AllowEdit = true;
+            columnValorUnitario = treeList1.Columns[ColumnNames.ValorUnitario];
+            columnValorUnitario.Caption = "Valor Unitario";
+            columnValorUnitario.OptionsColumn.AllowEdit = true;
 
-            var totalValueColumn = treeList1.Columns[TotalValueColumnIndex];
-            totalValueColumn.Caption = "Valor Total";
-            totalValueColumn.OptionsColumn.AllowEdit = false;
+            columnValorTotal = treeList1.Columns[ColumnNames.ValorTotal];
+            columnValorTotal.Caption = "Valor Total";
+            columnValorTotal.OptionsColumn.AllowEdit = false;
 
-            var unitColumn = treeList1.Columns[UnitColumnIndex];
-            unitColumn.Caption = "Unidad";
-            unitColumn.OptionsColumn.AllowEdit = false;
-            unitColumn.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
-            unitColumn.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
+            columnUnidad = treeList1.Columns[ColumnNames.Unidad];
+            columnUnidad.Caption = "Unidad";
+            columnUnidad.OptionsColumn.AllowEdit = false;
+            columnUnidad.AppearanceCell.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
+            columnUnidad.AppearanceHeader.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
+
+            columnAlias = treeList1.Columns[ColumnNames.Alias];
 
             var resourceTypesTable = new DataTable();
             resourceTypesTable.Columns.Add("EmpresaId", typeof(int));
@@ -289,32 +360,41 @@ namespace DevExpressTreeListDemo
             treeListItemService.SetPolicy(resourceTypePolicy);
 
             resourceTypeEditorService = new ResourceTypeEditorService(resourceTypePolicy, resourceTypesTable);
-            resourceTypeEditorService.Attach(treeList1, resourceTypeColumn);
+            resourceTypeEditorService.Attach(treeList1, columnTipoRecurso);
 
             resourceEditorService = new ResourceEditorService(resourcesTable);
-            resourceEditorService.Attach(treeList1, resourceColumn);
+            resourceEditorService.Attach(treeList1, columnRecurso);
+            resourceEditorService.ResourceCreationRequested += ResourceEditorService_ResourceCreationRequested;
 
             unitEditorService = new UnitEditorService(unitsTable);
-            unitEditorService.Attach(treeList1, unitColumn);
+            unitEditorService.Attach(treeList1, columnUnidad);
 
             calculationTypeEditorService = new CalculationTypeEditorService(calculationTypesTable);
-            calculationTypeEditorService.Attach(treeList1, calculationTypeColumn);
+            calculationTypeEditorService.Attach(treeList1, columnTipoCalculo);
 
             RepositoryItemTextEdit decimalEditor = CreateDecimalEditor();
             treeList1.RepositoryItems.Add(decimalEditor);
-            hoursPerDayColumn.ColumnEdit = decimalEditor;
-            performanceColumn.ColumnEdit = decimalEditor;
-            crewColumn.ColumnEdit = decimalEditor;
-            quantityColumn.ColumnEdit = decimalEditor;
-            unitValueColumn.ColumnEdit = decimalEditor;
-            totalValueColumn.ColumnEdit = decimalEditor;
+            columnHorasJornal.ColumnEdit = decimalEditor;
+            columnRendimiento.ColumnEdit = decimalEditor;
+            columnCantidad.ColumnEdit = decimalEditor;
+            columnPesoUnitario.ColumnEdit = decimalEditor;
+            columnDiasDuracion.ColumnEdit = decimalEditor;
+            columnCantidadTotal.ColumnEdit = decimalEditor;
+            columnValorUnitario.ColumnEdit = decimalEditor;
+            columnValorTotal.ColumnEdit = decimalEditor;
 
-            ConfigureDecimalColumn(hoursPerDayColumn);
-            ConfigureDecimalColumn(performanceColumn);
-            ConfigureDecimalColumn(crewColumn);
-            ConfigureDecimalColumn(quantityColumn);
-            ConfigureDecimalColumn(unitValueColumn);
-            ConfigureDecimalColumn(totalValueColumn);
+            var independienteEditor = new DevExpress.XtraEditors.Repository.RepositoryItemCheckEdit();
+            treeList1.RepositoryItems.Add(independienteEditor);
+            columnIndependiente.ColumnEdit = independienteEditor;
+
+            ConfigureDecimalColumn(columnHorasJornal);
+            ConfigureDecimalColumn(columnRendimiento);
+            ConfigureDecimalColumn(columnCantidad);
+            ConfigureDecimalColumn(columnPesoUnitario);
+            ConfigureDecimalColumn(columnDiasDuracion);
+            ConfigureDecimalColumn(columnCantidadTotal);
+            ConfigureDecimalColumn(columnValorUnitario);
+            ConfigureDecimalColumn(columnValorTotal);
 
             treeList1.CellValueChanged -= treeList1_CellValueChanged;
             treeList1.CellValueChanged += treeList1_CellValueChanged;
@@ -346,17 +426,23 @@ namespace DevExpressTreeListDemo
             if (treeList1 == null || treeList1.Columns == null || treeList1.Columns.Count == 0)
                 return;
 
-            if (CalculationTypeColumnIndex < treeList1.Columns.Count)
-                treeList1.Columns[CalculationTypeColumnIndex].Visible = ColumnaTipoCalculoVisible;
+            if (columnTipoCalculo != null)
+                columnTipoCalculo.Visible = ColumnaTipoCalculoVisible;
 
-            if (PerformanceColumnIndex < treeList1.Columns.Count)
-                treeList1.Columns[PerformanceColumnIndex].Visible = ColumnaRendimientoVisible;
+            if (columnRendimiento != null)
+                columnRendimiento.Visible = ColumnaRendimientoVisible;
 
-            if (HoursPerDayColumnIndex < treeList1.Columns.Count)
-                treeList1.Columns[HoursPerDayColumnIndex].Visible = ColumnaHorasJornalVisible;
+            if (columnHorasJornal != null)
+                columnHorasJornal.Visible = ColumnaHorasJornalVisible;
 
-            if (CrewColumnIndex < treeList1.Columns.Count)
-                treeList1.Columns[CrewColumnIndex].Visible = ColumnaCuadrillaVisible;
+            if (columnCantidad != null)
+                columnCantidad.Visible = ColumnaCantidadVisible;
+
+            if (columnPesoUnitario != null)
+                columnPesoUnitario.Visible = ColumnaPesoUnitarioVisible;
+
+            if (columnDiasDuracion != null)
+                columnDiasDuracion.Visible = ColumnaDiasDuracionVisible;
         }
 
         private static Dictionary<int, string> BuildResourceTypeMap(DataTable table)
@@ -503,8 +589,7 @@ namespace DevExpressTreeListDemo
             PartidaCalculationData data = GetPartidaCalculationData(node, true);
             data.RendimientoManoObra = rendimientoManoObra;
             data.RendimientoEquipos = rendimientoEquipos;
-            node.SetValue(PerformanceColumnIndex, null);
-            node.SetValue(CrewColumnIndex, null);
+            node.SetValue(columnRendimiento, null);
         }
     }
 }

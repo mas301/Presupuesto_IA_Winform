@@ -43,26 +43,23 @@ namespace DevExpressTreeListDemo
                     if (item.RecursoxPresupuestoPadreId.HasValue)
                         nodeById.TryGetValue(item.RecursoxPresupuestoPadreId.Value, out parentNode);
 
-                    TreeListNode node = treeList1.AppendNode(
-                        new object[]
-                        {
-                            string.Empty,
-                            item.TipoRecursoId,
-                            item.RecursoId.HasValue ? (object)item.RecursoId.Value : null,
-                            item.UnidadId.HasValue ? (object)item.UnidadId.Value : null,
-                            item.TipoCalculoId.HasValue ? (object)item.TipoCalculoId.Value : null,
-                            item.HorasJornal.HasValue ? (object)item.HorasJornal.Value : null,
-                            isPartida ? null : (item.Rendimiento.HasValue ? (object)item.Rendimiento.Value : null),
-                            isPartida ? null : (item.Cuadrilla.HasValue ? (object)item.Cuadrilla.Value : null),
-                            item.Cantidad.HasValue ? (object)item.Cantidad.Value : null,
-                            item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : null,
-                            item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : null,
-                            item.Alias
-                        },
-                        parentNode);
+                    TreeListNode node = treeList1.AppendNode(null, parentNode);
+                    node.SetValue(columnTipoRecurso, item.TipoRecursoId);
+                    node.SetValue(columnRecurso, item.RecursoId.HasValue ? (object)item.RecursoId.Value : null);
+                    node.SetValue(columnUnidad, item.UnidadId.HasValue ? (object)item.UnidadId.Value : null);
+                    node.SetValue(columnTipoCalculo, item.TipoCalculoId.HasValue ? (object)item.TipoCalculoId.Value : null);
+                    node.SetValue(columnHorasJornal, item.HorasJornal.HasValue ? (object)item.HorasJornal.Value : null);
+                    node.SetValue(columnRendimiento, isPartida ? null : (item.Rendimiento.HasValue ? (object)item.Rendimiento.Value : null));
+                    node.SetValue(columnCantidad, item.Cantidad.HasValue ? (object)item.Cantidad.Value : null);
+                    node.SetValue(columnPesoUnitario, item.PesoUnitario.HasValue ? (object)item.PesoUnitario.Value : null);
+                    node.SetValue(columnDiasDuracion, item.DiasDuracion.HasValue ? (object)item.DiasDuracion.Value : null);
+                    node.SetValue(columnCantidadTotal, item.CantidadTotal.HasValue ? (object)item.CantidadTotal.Value : null);
+                    node.SetValue(columnValorUnitario, item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : null);
+                    node.SetValue(columnValorTotal, item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : null);
+                    node.SetValue(columnAlias, item.Alias);
 
                     if (isPartida)
-                        SetPartidaCalculationData(node, item.Rendimiento, item.Cuadrilla);
+                        SetPartidaCalculationData(node, item.Rendimiento, null);
 
                     nodeById[item.RecursoxPresupuestoId] = node;
                 }
@@ -95,17 +92,25 @@ namespace DevExpressTreeListDemo
 
             foreach (TreeListNode node in EnumerateAllNodes())
             {
+                int? resourceId = ToNullableInt(node.GetValue(columnRecurso));
+                if (!resourceId.HasValue)
+                {
+                    node.SetValue(columnIndependiente, false);
+                    continue;
+                }
+
+                if (!resourcesById.TryGetValue(resourceId.Value, out RecursoDto resource))
+                {
+                    node.SetValue(columnIndependiente, false);
+                    continue;
+                }
+
+                node.SetValue(columnIndependiente, resource.Independiente);
+
                 if (!resourceTypePolicy.IsPartida(node))
                     continue;
 
-                int? resourceId = ToNullableInt(node.GetValue(ResourceColumnIndex));
-                if (!resourceId.HasValue)
-                    continue;
-
-                if (!resourcesById.TryGetValue(resourceId.Value, out RecursoDto resource))
-                    continue;
-
-                SetPartidaCalculationData(node, resource.Rendimiento, resource.Cuadrilla);
+                SetPartidaCalculationData(node, resource.Rendimiento, resource.RendimientoEquipos);
             }
         }
 
@@ -161,25 +166,25 @@ namespace DevExpressTreeListDemo
             {
                 EmpresaId = EmpresaId,
                 PresupuestoId = PresupuestoId,
-                Alias = ToStringOrEmpty(node.GetValue(AliasColumnIndex)),
+                Alias = ToStringOrEmpty(node.GetValue(columnAlias)),
                 RecursoxPresupuestoId = currentClientId,
                 RecursoxPresupuestoPadreId = parentClientId,
                 Orden = order,
                 Nivel = level,
-                TipoRecursoId = ToInt(node.GetValue(ResourceTypeColumnIndex)),
-                RecursoId = ToNullableInt(node.GetValue(ResourceColumnIndex)),
-                UnidadId = ToNullableInt(node.GetValue(UnitColumnIndex)),
-                TipoCalculoId = ToNullableInt(node.GetValue(CalculationTypeColumnIndex)),
-                HorasJornal = ToNullableDecimal(node.GetValue(HoursPerDayColumnIndex)),
+                TipoRecursoId = ToInt(node.GetValue(columnTipoRecurso)),
+                RecursoId = ToNullableInt(node.GetValue(columnRecurso)),
+                UnidadId = ToNullableInt(node.GetValue(columnUnidad)),
+                TipoCalculoId = ToNullableInt(node.GetValue(columnTipoCalculo)),
+                HorasJornal = ToNullableDecimal(node.GetValue(columnHorasJornal)),
                 Rendimiento = resourceTypePolicy.IsPartida(node)
                     ? GetPartidaRendimientoManoObra(node)
-                    : ToNullableDecimal(node.GetValue(PerformanceColumnIndex)),
-                Cuadrilla = resourceTypePolicy.IsPartida(node)
-                    ? GetPartidaRendimientoEquipos(node)
-                    : ToNullableDecimal(node.GetValue(CrewColumnIndex)),
-                Cantidad = ToNullableDecimal(node.GetValue(QuantityColumnIndex)),
-                ValorUnitario = ToNullableDecimal(node.GetValue(UnitValueColumnIndex)),
-                ValorTotal = ToNullableDecimal(node.GetValue(TotalValueColumnIndex))
+                    : ToNullableDecimal(node.GetValue(columnRendimiento)),
+                Cantidad = ToNullableDecimal(node.GetValue(columnCantidad)),
+                PesoUnitario = ToNullableDecimal(node.GetValue(columnPesoUnitario)),
+                DiasDuracion = ToNullableDecimal(node.GetValue(columnDiasDuracion)),
+                CantidadTotal = ToNullableDecimal(node.GetValue(columnCantidadTotal)),
+                ValorUnitario = ToNullableDecimal(node.GetValue(columnValorUnitario)),
+                ValorTotal = ToNullableDecimal(node.GetValue(columnValorTotal))
             });
 
             for (int i = 0; i < node.Nodes.Count; i++)
@@ -244,14 +249,14 @@ namespace DevExpressTreeListDemo
                 if (!resourceTypePolicy.IsPartida(node))
                     continue;
 
-                int? partidaId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                int? partidaId = ToNullableInt(node.GetValue(columnRecurso));
                 if (!partidaId.HasValue || !processedPartidaIds.Add(partidaId.Value))
                     continue;
 
                 for (int i = 0; i < node.Nodes.Count; i++)
                 {
                     TreeListNode child = node.Nodes[i];
-                    int? recursoId = ToNullableInt(child.GetValue(ResourceColumnIndex));
+                    int? recursoId = ToNullableInt(child.GetValue(columnRecurso));
                     if (!recursoId.HasValue)
                         continue;
 
@@ -260,15 +265,15 @@ namespace DevExpressTreeListDemo
                         EmpresaId = EmpresaId,
                         PartidaId = partidaId.Value,
                         RecursoId = recursoId.Value,
-                        TipoCalculoId = ToNullableInt(child.GetValue(CalculationTypeColumnIndex)),
-                        UnidadId = ToNullableInt(child.GetValue(UnitColumnIndex)),
+                        TipoCalculoId = ToNullableInt(child.GetValue(columnTipoCalculo)),
+                        UnidadId = ToNullableInt(child.GetValue(columnUnidad)),
                         Rendimiento = resourceTypePolicy.IsPartida(child)
                             ? GetPartidaRendimientoManoObra(child)
-                            : ToNullableDecimal(child.GetValue(PerformanceColumnIndex)),
-                        Cuadrilla = resourceTypePolicy.IsPartida(child)
-                            ? GetPartidaRendimientoEquipos(child)
-                            : ToNullableDecimal(child.GetValue(CrewColumnIndex)),
-                        Cantidad = ToNullableDecimal(child.GetValue(QuantityColumnIndex)) ?? 0m,
+                            : ToNullableDecimal(child.GetValue(columnRendimiento)),
+                        Cantidad = ToNullableDecimal(child.GetValue(columnCantidad)),
+                        PesoUnitario = ToNullableDecimal(child.GetValue(columnPesoUnitario)),
+                        DiasDuracion = ToNullableDecimal(child.GetValue(columnDiasDuracion)),
+                        CantidadTotal = ToNullableDecimal(child.GetValue(columnCantidadTotal)) ?? 0m,
                         Orden = i + 1
                     });
                 }

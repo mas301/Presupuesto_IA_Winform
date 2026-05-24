@@ -54,6 +54,7 @@ namespace DevExpressTreeListDemo
         {
             ShowSharedPartidaWarningIfNeeded(treeList1.FocusedNode, allowPartidaRootTarget: false);
             treeListItemService.AddAbove(treeList1.FocusedNode);
+            ReplicateFocusedPartidaStructureIfNeeded();
             RecalculateNumericRules();
             MarkPendingAutoSave();
         }
@@ -62,6 +63,7 @@ namespace DevExpressTreeListDemo
         {
             ShowSharedPartidaWarningIfNeeded(treeList1.FocusedNode, allowPartidaRootTarget: false);
             treeListItemService.AddBelow(treeList1.FocusedNode);
+            ReplicateFocusedPartidaStructureIfNeeded();
             RecalculateNumericRules();
             MarkPendingAutoSave();
         }
@@ -77,6 +79,7 @@ namespace DevExpressTreeListDemo
                 return;
             }
 
+            ReplicateFocusedPartidaStructureIfNeeded();
             RecalculateNumericRules();
             MarkPendingAutoSave();
         }
@@ -84,7 +87,12 @@ namespace DevExpressTreeListDemo
         private void menuDeleteItem_Click(object sender, EventArgs e)
         {
             ShowSharedPartidaWarningIfNeeded(treeList1.FocusedNode, allowPartidaRootTarget: false);
-            treeListItemService.Delete(treeList1.FocusedNode);
+            TreeListNode focusedBefore = treeList1.FocusedNode;
+            TreeListNode partidaBefore = focusedBefore != null && focusedBefore.ParentNode != null
+                ? FindContainingPartidaOrSelf(focusedBefore.ParentNode)
+                : null;
+            treeListItemService.Delete(focusedBefore);
+            ReplicatePartidaStructureToPeers(partidaBefore);
             RecalculateNumericRules();
             MarkPendingAutoSave();
         }
@@ -105,7 +113,11 @@ namespace DevExpressTreeListDemo
                 return;
 
             ShowSharedPartidaWarningIfNeeded(selectedNode, allowPartidaRootTarget: false);
+            TreeListNode partidaBefore = selectedNode.ParentNode != null
+                ? FindContainingPartidaOrSelf(selectedNode.ParentNode)
+                : null;
             treeListItemService.Cut(selectedNode, data => clipboardData = data);
+            ReplicatePartidaStructureToPeers(partidaBefore);
             RecalculateNumericRules();
             MarkPendingAutoSave();
         }
@@ -121,6 +133,7 @@ namespace DevExpressTreeListDemo
                 return;
             }
 
+            ReplicateFocusedPartidaStructureIfNeeded();
             RecalculateNumericRules();
             MarkPendingAutoSave();
         }
@@ -136,6 +149,7 @@ namespace DevExpressTreeListDemo
                 return;
             }
 
+            ReplicateFocusedPartidaStructureIfNeeded();
             RecalculateNumericRules();
             MarkPendingAutoSave();
         }
@@ -144,6 +158,7 @@ namespace DevExpressTreeListDemo
         {
             if (treeListItemService.MoveRight(treeList1.FocusedNode))
             {
+                ReplicateFocusedPartidaStructureIfNeeded();
                 RecalculateNumericRules();
                 MarkPendingAutoSave();
             }
@@ -155,6 +170,7 @@ namespace DevExpressTreeListDemo
         {
             if (treeListItemService.MoveLeft(treeList1.FocusedNode))
             {
+                ReplicateFocusedPartidaStructureIfNeeded();
                 RecalculateNumericRules();
                 MarkPendingAutoSave();
             }
@@ -166,6 +182,7 @@ namespace DevExpressTreeListDemo
         {
             if (treeListItemService.MoveUp(treeList1.FocusedNode))
             {
+                ReplicateFocusedPartidaStructureIfNeeded();
                 RecalculateNumericRules();
                 MarkPendingAutoSave();
             }
@@ -177,11 +194,21 @@ namespace DevExpressTreeListDemo
         {
             if (treeListItemService.MoveDown(treeList1.FocusedNode))
             {
+                ReplicateFocusedPartidaStructureIfNeeded();
                 RecalculateNumericRules();
                 MarkPendingAutoSave();
             }
 
             UpdateMoveActionsState(treeList1.FocusedNode);
+        }
+
+        private void ReplicateFocusedPartidaStructureIfNeeded()
+        {
+            TreeListNode partida = FindContainingPartidaOrSelf(treeList1.FocusedNode);
+            if (partida == null)
+                return;
+
+            ReplicatePartidaStructureToPeers(partida);
         }
 
         private void menuModifyResource_Click(object sender, EventArgs e)
@@ -191,6 +218,80 @@ namespace DevExpressTreeListDemo
                 return;
 
             EditResourceWithForm(selectedNode, true, true);
+        }
+
+        private void ResourceEditorService_ResourceCreationRequested(object sender, ResourceCreationRequestedEventArgs e)
+        {
+            if (e == null || e.Node == null || string.IsNullOrWhiteSpace(e.TypedText))
+                return;
+
+            List<TipoRecursoDto> resourceTypes;
+            List<RecursoDto> resources;
+            List<UnidadDto> units;
+            List<TipoCalculoDto> calculationTypes;
+            try
+            {
+                resourceTypes = Datos.ObtenerTiposRecurso(EmpresaId, true);
+                resources = Datos.ObtenerRecursos(EmpresaId);
+                units = Datos.ObtenerUnidades();
+                calculationTypes = Datos.ObtenerTiposCalculo(EmpresaId);
+            }
+            catch (System.Data.DataException ex)
+            {
+                MessageBox.Show(ex.GetBaseException().Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            using (var form = new ResourceEditForm(
+                resourceTypes,
+                resources,
+                units,
+                calculationTypes,
+                e.TipoRecursoId,
+                null,
+                null,
+                null,
+                string.Empty,
+                null,
+                null,
+                null,
+                false,
+                false,
+                true,
+                false))
+            {
+                form.PreloadResourceName(e.TypedText);
+
+                if (form.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                if (!form.SelectedTipoRecursoId.HasValue || string.IsNullOrWhiteSpace(form.RecursoTexto))
+                    return;
+
+                try
+                {
+                    int createdResourceId = Datos.CrearRecurso(
+                        EmpresaId,
+                        form.SelectedTipoRecursoId.Value,
+                        form.RecursoTexto,
+                        form.SelectedUnidadId,
+                        form.SelectedTipoCalculoId,
+                        form.RendimientoManoObra,
+                        form.RendimientoEquipos,
+                        form.DiasDuracion,
+                        form.Independiente);
+
+                    resourceNamesById[createdResourceId] = form.RecursoTexto;
+                    resourceUnitIdsByResourceId[createdResourceId] = form.SelectedUnidadId;
+                    resourceCalculationTypeIdsByResourceId[createdResourceId] = form.SelectedTipoCalculoId;
+                    ConfigureColumnEditors();
+                    e.CreatedResourceId = createdResourceId;
+                }
+                catch (System.Data.DataException ex)
+                {
+                    MessageBox.Show(ex.GetBaseException().Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         private void btnCreateResource_Click(object sender, EventArgs e)
@@ -224,6 +325,8 @@ namespace DevExpressTreeListDemo
                 string.Empty,
                 null,
                 null,
+                null,
+                false,
                 true,
                 true,
                 false))
@@ -240,7 +343,9 @@ namespace DevExpressTreeListDemo
                         form.SelectedUnidadId,
                         form.SelectedTipoCalculoId,
                         form.RendimientoManoObra,
-                        form.RendimientoEquipos);
+                        form.RendimientoEquipos,
+                        form.DiasDuracion,
+                        form.Independiente);
 
                     resourceNamesById[createdResourceId] = form.RecursoTexto;
                     resourceUnitIdsByResourceId[createdResourceId] = form.SelectedUnidadId;
@@ -275,23 +380,9 @@ namespace DevExpressTreeListDemo
 
         private void btnPropiedades_Click(object sender, EventArgs e)
         {
-            using (var form = new Propiedades(
-                GrabacionAutomatica,
-                InicioNumeracion,
-                ColumnaTipoCalculoVisible,
-                ColumnaRendimientoVisible,
-                ColumnaHorasJornalVisible,
-                ColumnaCuadrillaVisible))
+            using (var form = new Propiedades(this))
             {
-                if (form.ShowDialog(this) == DialogResult.OK)
-                {
-                    GrabacionAutomatica = form.GrabacionAutomatica;
-                    InicioNumeracion = form.InicioNumeracion;
-                    ColumnaTipoCalculoVisible = form.ColumnaTipoCalculoVisible;
-                    ColumnaRendimientoVisible = form.ColumnaRendimientoVisible;
-                    ColumnaHorasJornalVisible = form.ColumnaHorasJornalVisible;
-                    ColumnaCuadrillaVisible = form.ColumnaCuadrillaVisible;
-                }
+                form.ShowDialog(this);
             }
         }
 
@@ -328,9 +419,11 @@ namespace DevExpressTreeListDemo
                 preloadFromNode && catalogResource != null ? (int?)catalogResource.RecursoId : null,
                 preloadFromNode && catalogResource != null ? catalogResource.UnidadId : null,
                 preloadFromNode && catalogResource != null ? catalogResource.TipoCalculoId : null,
-                preloadFromNode ? ToStringOrEmpty(selectedNode.GetValue(AliasColumnIndex)) : string.Empty,
+                    preloadFromNode ? ToStringOrEmpty(selectedNode.GetValue(columnAlias)) : string.Empty,
                 preloadFromNode && catalogResource != null ? catalogResource.Rendimiento : null,
-                preloadFromNode && catalogResource != null ? catalogResource.Cuadrilla : null,
+                preloadFromNode && catalogResource != null ? catalogResource.RendimientoEquipos : null,
+                preloadFromNode && catalogResource != null ? catalogResource.DiasDuracion : null,
+                preloadFromNode && catalogResource != null ? catalogResource.Independiente : false,
                 !preloadFromNode,
                 false,
                 preloadFromNode))
@@ -338,7 +431,7 @@ namespace DevExpressTreeListDemo
                 if (form.ShowDialog(this) != DialogResult.OK)
                     return;
 
-                int? originalResourceId = ToNullableInt(selectedNode.GetValue(ResourceColumnIndex));
+                int? originalResourceId = ToNullableInt(selectedNode.GetValue(columnRecurso));
                 int? resourceIdOverride = null;
                 bool shouldReplicateToSameResource = replicateToSameResource;
 
@@ -353,7 +446,9 @@ namespace DevExpressTreeListDemo
                             form.SelectedUnidadId,
                             form.SelectedTipoCalculoId,
                             form.RendimientoManoObra,
-                            form.RendimientoEquipos);
+                            form.RendimientoEquipos,
+                            form.DiasDuracion,
+                            form.Independiente);
 
                         resourceNamesById[createdResourceId] = form.RecursoTexto;
                         resourceUnitIdsByResourceId[createdResourceId] = form.SelectedUnidadId;
@@ -379,7 +474,9 @@ namespace DevExpressTreeListDemo
                             form.SelectedUnidadId,
                             form.SelectedTipoCalculoId,
                             form.RendimientoManoObra,
-                            form.RendimientoEquipos);
+                            form.RendimientoEquipos,
+                            form.DiasDuracion,
+                            form.Independiente);
 
                         resourceIdOverride = originalResourceId.Value;
                         resourceNamesById[originalResourceId.Value] = form.RecursoTexto;
@@ -406,11 +503,11 @@ namespace DevExpressTreeListDemo
                             if (node == selectedNode)
                                 continue;
 
-                            int? nodeResourceId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                            int? nodeResourceId = ToNullableInt(node.GetValue(columnRecurso));
                             if (!nodeResourceId.HasValue || nodeResourceId.Value != originalResourceId.Value)
                                 continue;
 
-                            ApplyResourceEditsToNode(node, form, false, null);
+                            ApplyResourceEditsToNode(node, form, false, originalResourceId.Value);
                         }
                     }
                 }
@@ -424,9 +521,9 @@ namespace DevExpressTreeListDemo
             }
         }
 
-        private static RecursoDto ResolveCatalogResource(TreeListNode node, List<RecursoDto> resources)
+        private RecursoDto ResolveCatalogResource(TreeListNode node, List<RecursoDto> resources)
         {
-            int? resourceId = node == null ? (int?)null : ToNullableInt(node.GetValue(ResourceColumnIndex));
+            int? resourceId = node == null ? (int?)null : ToNullableInt(node.GetValue(columnRecurso));
             if (!resourceId.HasValue || resources == null)
                 return null;
 
@@ -441,15 +538,15 @@ namespace DevExpressTreeListDemo
 
         private void ApplyResourceEditsToNode(TreeListNode node, ResourceEditForm form, bool includeAlias, int? resourceIdOverride)
         {
-            node.SetValue(ResourceTypeColumnIndex, form.SelectedTipoRecursoId.HasValue ? (object)form.SelectedTipoRecursoId.Value : null);
-            node.SetValue(ResourceColumnIndex,
+            node.SetValue(columnTipoRecurso, form.SelectedTipoRecursoId.HasValue ? (object)form.SelectedTipoRecursoId.Value : null);
+            node.SetValue(columnRecurso,
                 resourceIdOverride.HasValue
                     ? (object)resourceIdOverride.Value
                     : (form.SelectedRecursoId.HasValue ? (object)form.SelectedRecursoId.Value : null));
-            node.SetValue(UnitColumnIndex, form.SelectedUnidadId.HasValue ? (object)form.SelectedUnidadId.Value : null);
-            node.SetValue(CalculationTypeColumnIndex, form.SelectedTipoCalculoId.HasValue ? (object)form.SelectedTipoCalculoId.Value : null);
+            node.SetValue(columnUnidad, form.SelectedUnidadId.HasValue ? (object)form.SelectedUnidadId.Value : null);
+            node.SetValue(columnTipoCalculo, form.SelectedTipoCalculoId.HasValue ? (object)form.SelectedTipoCalculoId.Value : null);
             if (includeAlias)
-                node.SetValue(AliasColumnIndex, form.Alias ?? string.Empty);
+                node.SetValue(columnAlias, form.Alias ?? string.Empty);
 
             if (resourceTypePolicy.IsPartida(node))
             {
@@ -457,8 +554,7 @@ namespace DevExpressTreeListDemo
             }
             else
             {
-                node.SetValue(PerformanceColumnIndex, form.RendimientoManoObra.HasValue ? (object)form.RendimientoManoObra.Value : null);
-                node.SetValue(CrewColumnIndex, form.RendimientoEquipos.HasValue ? (object)form.RendimientoEquipos.Value : null);
+                node.SetValue(columnRendimiento, form.RendimientoManoObra.HasValue ? (object)form.RendimientoManoObra.Value : null);
             }
         }
 
@@ -493,7 +589,7 @@ namespace DevExpressTreeListDemo
                 return;
             }
 
-            string selectedType = resourceTypePolicy.NormalizeTypeName(targetNode.GetValue(ResourceTypeValueIndex));
+            string selectedType = resourceTypePolicy.NormalizeTypeName(targetNode.GetValue(columnTipoRecurso));
             TreeListNode targetParent = targetNode.ParentNode;
             TreeListNode newParentOnIndent = GetPreviousSibling(targetNode);
             TreeListNode newParentOnOutdent = targetParent == null ? null : targetParent.ParentNode;
@@ -501,7 +597,7 @@ namespace DevExpressTreeListDemo
 
             bool canPasteHere = clipboardData != null
                 && resourceTypePolicy.HasAssignedResourceType(targetNode)
-                && resourceTypePolicy.CanBePlacedUnder(targetParent, resourceTypePolicy.NormalizeTypeName(clipboardData.Values[ResourceTypeValueIndex]));
+                && resourceTypePolicy.CanBePlacedUnder(targetParent, resourceTypePolicy.NormalizeTypeName(TreeListItemService.GetClipboardValue(clipboardData, ColumnNames.TipoRecurso)));
             menuPasteItem.Visible = canPasteHere;
             menuPasteItemBelow.Visible = canPasteHere;
             menuAddSubItem.Visible = resourceTypePolicy.CanParentAcceptChildren(targetNode) && resourceTypePolicy.HasAssignedResourceType(targetNode);
@@ -528,7 +624,7 @@ namespace DevExpressTreeListDemo
                 canMoveUp = currentIndex > 0;
                 canMoveDown = currentIndex >= 0 && currentIndex < siblingCount - 1;
 
-                string selectedType = resourceTypePolicy.NormalizeTypeName(targetNode.GetValue(ResourceTypeValueIndex));
+                string selectedType = resourceTypePolicy.NormalizeTypeName(targetNode.GetValue(columnTipoRecurso));
                 TreeListNode[] nodes = new[] { targetNode };
                 TreeListNode newParentOnIndent = GetPreviousSibling(targetNode);
                 TreeListNode newParentOnOutdent = parent == null ? null : parent.ParentNode;
@@ -576,7 +672,7 @@ namespace DevExpressTreeListDemo
             if (!allowPartidaRootTarget && targetNode == partidaNode)
                 return;
 
-            int? partidaId = ToNullableInt(partidaNode.GetValue(ResourceColumnIndex));
+            int? partidaId = ToNullableInt(partidaNode.GetValue(columnRecurso));
             if (!partidaId.HasValue)
                 return;
 
@@ -602,7 +698,7 @@ namespace DevExpressTreeListDemo
                 if (!resourceTypePolicy.IsPartida(node))
                     continue;
 
-                int? nodePartidaId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                int? nodePartidaId = ToNullableInt(node.GetValue(columnRecurso));
                 if (nodePartidaId.HasValue && nodePartidaId.Value == partidaId)
                     count++;
             }

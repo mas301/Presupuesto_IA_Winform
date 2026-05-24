@@ -29,25 +29,49 @@ namespace DevExpressTreeListDemo
             bool allowsCalculationDetail = IsCalculationType2Or3(node);
             bool descendantOrSelfOfPartida = hasPartidaAncestor || isPartida;
 
+            if (isPartida)
+            {
+                node.SetValue(columnDiasDuracion, null);
+            }
+
             if (allowsCalculationDetail)
             {
                 decimal horasJornal = horasJornalPresupuestoActual;
-                node.SetValue(HoursPerDayColumnIndex, horasJornal);
-                decimal cuadrilla = ToDecimal(node.GetValue(CrewColumnIndex));
+                node.SetValue(columnHorasJornal, horasJornal);
+                decimal cantidad = ToDecimal(node.GetValue(columnCantidad));
                 decimal rendimiento = ResolveRendimientoForCalculationType2Or3(node);
-                decimal cantidadCalculada = rendimiento == 0m ? 0m : (horasJornal * cuadrilla) / rendimiento;
+                decimal cantidadCalculada = rendimiento == 0m ? 0m : (horasJornal * cantidad) / rendimiento;
 
-                node.SetValue(PerformanceColumnIndex, rendimiento);
-                node.SetValue(QuantityColumnIndex, cantidadCalculada);
+                node.SetValue(columnRendimiento, rendimiento);
+                node.SetValue(columnCantidadTotal, cantidadCalculada);
+            }
+            else if (IsCalculationType8(node) && !isPartida)
+            {
+                decimal horasJornal = horasJornalPresupuestoActual;
+                node.SetValue(columnHorasJornal, horasJornal);
+                node.SetValue(columnRendimiento, null);
+
+                decimal? partidaDiasDuracion = GetPartidaDiasDuracionFromCatalog(node);
+                node.SetValue(columnDiasDuracion, partidaDiasDuracion);
+
+                decimal cantidad = ToDecimal(node.GetValue(columnCantidad));
+                decimal diasDuracion = partidaDiasDuracion ?? 0m;
+                node.SetValue(columnCantidadTotal, cantidad * horasJornal * diasDuracion);
             }
             else
             {
-                node.SetValue(HoursPerDayColumnIndex, null);
+                node.SetValue(columnHorasJornal, null);
 
                 if (!isPartida)
                 {
-                    node.SetValue(PerformanceColumnIndex, null);
-                    node.SetValue(CrewColumnIndex, null);
+                    node.SetValue(columnRendimiento, null);
+                }
+
+                if (IsCalculationType5(node))
+                {
+                    decimal cantidad = ToDecimal(node.GetValue(columnCantidad));
+                    decimal pesoUnitario = ToDecimal(node.GetValue(columnPesoUnitario));
+                    node.SetValue(columnCantidadTotal, cantidad * pesoUnitario);
                 }
             }
 
@@ -60,26 +84,55 @@ namespace DevExpressTreeListDemo
                 decimal manoDeObraTotal = SumManoDeObraTotal(node);
                 ApplyCalculationType4Rules(node, manoDeObraTotal);
 
-                decimal unitValue = 0m;
-                for (int i = 0; i < node.Nodes.Count; i++)
-                    unitValue += ToDecimal(node.Nodes[i].GetValue(TotalValueColumnIndex));
+                bool partidaIsType7 = IsCalculationType7(node);
 
-                decimal quantity = ToDecimal(node.GetValue(QuantityColumnIndex));
-                decimal totalValue = CalculateTotalValue(node, quantity, unitValue);
+                if (partidaIsType7)
+                {
+                    decimal childrenQuantityTotal = 0m;
+                    for (int i = 0; i < node.Nodes.Count; i++)
+                        childrenQuantityTotal += ToDecimal(node.Nodes[i].GetValue(columnCantidadTotal));
+                    node.SetValue(columnPesoUnitario, childrenQuantityTotal);
 
-                node.SetValue(UnitValueColumnIndex, unitValue);
-                node.SetValue(TotalValueColumnIndex, totalValue);
-                partidasTotalInSubtree += totalValue;
+                    decimal cantidad = ToDecimal(node.GetValue(columnCantidad));
+                    decimal cantidadTotal = cantidad * childrenQuantityTotal;
+                    node.SetValue(columnCantidadTotal, cantidadTotal);
+
+                    decimal unitValue = ToDecimal(node.GetValue(columnValorUnitario));
+                    decimal totalValue = CalculateTotalValue(node, cantidadTotal, unitValue);
+                    node.SetValue(columnValorTotal, totalValue);
+                    partidasTotalInSubtree += totalValue;
+                }
+                else
+                {
+                    decimal unitValue = 0m;
+                    for (int i = 0; i < node.Nodes.Count; i++)
+                        unitValue += ToDecimal(node.Nodes[i].GetValue(columnValorTotal));
+
+                    decimal quantity = ToDecimal(node.GetValue(columnCantidadTotal));
+                    decimal totalValue = CalculateTotalValue(node, quantity, unitValue);
+
+                    node.SetValue(columnValorUnitario, unitValue);
+                    node.SetValue(columnValorTotal, totalValue);
+                    partidasTotalInSubtree += totalValue;
+                }
             }
             else if (hasPartidaAncestor)
             {
-                decimal quantity = ToDecimal(node.GetValue(QuantityColumnIndex));
-                decimal unitValue = ToDecimal(node.GetValue(UnitValueColumnIndex));
-                node.SetValue(TotalValueColumnIndex, CalculateTotalValue(node, quantity, unitValue));
+                decimal quantity = ToDecimal(node.GetValue(columnCantidadTotal));
+                decimal unitValue = ToDecimal(node.GetValue(columnValorUnitario));
+                node.SetValue(columnValorTotal, CalculateTotalValue(node, quantity, unitValue));
             }
 
             if (!hasPartidaAncestor && !isPartida)
-                node.SetValue(TotalValueColumnIndex, partidasTotalInSubtree);
+                node.SetValue(columnValorTotal, partidasTotalInSubtree);
+
+            if (resourceTypePolicy.IsSubpresupuesto(node))
+            {
+                decimal childrenQuantityTotal = 0m;
+                for (int i = 0; i < node.Nodes.Count; i++)
+                    childrenQuantityTotal += ToDecimal(node.Nodes[i].GetValue(columnCantidadTotal));
+                node.SetValue(columnCantidadTotal, childrenQuantityTotal);
+            }
 
             return partidasTotalInSubtree;
         }
@@ -91,9 +144,9 @@ namespace DevExpressTreeListDemo
 
             if (IsCalculationType4(node))
             {
-                decimal quantity = ToDecimal(node.GetValue(QuantityColumnIndex));
-                node.SetValue(UnitValueColumnIndex, manoDeObraTotal);
-                node.SetValue(TotalValueColumnIndex, CalculateTotalValue(node, quantity, manoDeObraTotal));
+                decimal quantity = ToDecimal(node.GetValue(columnCantidadTotal));
+                node.SetValue(columnValorUnitario, manoDeObraTotal);
+                node.SetValue(columnValorTotal, CalculateTotalValue(node, quantity, manoDeObraTotal));
             }
 
             for (int i = 0; i < node.Nodes.Count; i++)
@@ -118,9 +171,9 @@ namespace DevExpressTreeListDemo
                 return 0m;
 
             decimal total = 0m;
-            string nodeType = resourceTypePolicy.NormalizeTypeName(node.GetValue(ResourceTypeColumnIndex));
+            string nodeType = resourceTypePolicy.NormalizeTypeName(node.GetValue(columnTipoRecurso));
             if (string.Equals(nodeType, "Mano de Obra", StringComparison.OrdinalIgnoreCase))
-                total += ToDecimal(node.GetValue(TotalValueColumnIndex));
+                total += ToDecimal(node.GetValue(columnValorTotal));
 
             for (int i = 0; i < node.Nodes.Count; i++)
                 total += SumManoDeObraTotalRecursive(node.Nodes[i]);
@@ -141,7 +194,7 @@ namespace DevExpressTreeListDemo
             if (node == null)
                 return 0m;
 
-            int? calculationType = ToNullableInt(node.GetValue(CalculationTypeColumnIndex));
+            int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
             if (!calculationType.HasValue)
                 return 0m;
 
@@ -155,7 +208,7 @@ namespace DevExpressTreeListDemo
             if (calculationType.Value == 3)
                 return GetPartidaRendimientoEquipos(partidaNode) ?? 0m;
 
-            return ToDecimal(node.GetValue(PerformanceColumnIndex));
+            return ToDecimal(node.GetValue(columnRendimiento));
         }
 
         private TreeListNode FindContainingPartida(TreeListNode node)
@@ -168,6 +221,22 @@ namespace DevExpressTreeListDemo
 
                 current = current.ParentNode;
             }
+
+            return null;
+        }
+
+        private decimal? GetPartidaDiasDuracionFromCatalog(TreeListNode node)
+        {
+            TreeListNode partidaNode = FindContainingPartida(node);
+            if (partidaNode == null || resourcesById == null)
+                return null;
+
+            int? partidaResourceId = ToNullableInt(partidaNode.GetValue(columnRecurso));
+            if (!partidaResourceId.HasValue)
+                return null;
+
+            if (resourcesById.TryGetValue(partidaResourceId.Value, out RecursoDto partidaResource))
+                return partidaResource.DiasDuracion;
 
             return null;
         }

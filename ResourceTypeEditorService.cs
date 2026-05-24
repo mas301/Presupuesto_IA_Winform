@@ -10,7 +10,7 @@ namespace DevExpressTreeListDemo
 {
     internal sealed class ResourceTypeEditorService
     {
-        private const int ResourceTypeColumnVisibleIndex = 1;
+        private const string ResourceTypeColumnFieldName = "TipoRecurso";
         private const string ResourceTypeColumnName = "TipoRecurso";
         private const string ResourceTypeIdColumnName = "TipoRecursoId";
 
@@ -39,7 +39,7 @@ namespace DevExpressTreeListDemo
 
         private void TreeList_CustomNodeCellEditForEditing(object sender, GetCustomNodeCellEditEventArgs e)
         {
-            if (e.Column == null || e.Column.VisibleIndex != ResourceTypeColumnVisibleIndex || e.Node == null)
+            if (e.Column == null || e.Node == null || e.Column.FieldName != ResourceTypeColumnFieldName)
                 return;
 
             editingEditor.DataSource = policy.BuildAllowedResourceTypesTable(e.Node, allResourceTypesTable);

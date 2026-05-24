@@ -11,7 +11,7 @@ namespace DevExpressTreeListDemo
 {
     internal sealed class ResourceEditorService
     {
-        private const int ResourceTypeColumnIndex = 1;
+        private const string ResourceTypeFieldName = "TipoRecurso";
         private const string ResourceTypeIdColumn = "TipoRecursoId";
         private const string ResourceIdColumn = "RecursoId";
         private const string ResourceNameColumn = "Recurso";
@@ -20,6 +20,9 @@ namespace DevExpressTreeListDemo
         private readonly RepositoryItemGridLookUpEdit displayEditor;
         private readonly RepositoryItemGridLookUpEdit editingEditor;
         private TreeListColumn attachedResourceColumn;
+        private TreeList attachedTreeList;
+
+        public event EventHandler<ResourceCreationRequestedEventArgs> ResourceCreationRequested;
 
         public ResourceEditorService(DataTable allResourcesTable)
         {
@@ -28,10 +31,12 @@ namespace DevExpressTreeListDemo
             editingEditor = CreateEditor(allResourcesTable);
             ConfigurePopupView(displayEditor);
             ConfigurePopupView(editingEditor);
+            editingEditor.ProcessNewValue += EditingEditor_ProcessNewValue;
         }
 
         public void Attach(TreeList treeList, TreeListColumn resourceColumn)
         {
+            attachedTreeList = treeList;
             attachedResourceColumn = resourceColumn;
             treeList.RepositoryItems.Add(displayEditor);
             treeList.RepositoryItems.Add(editingEditor);
@@ -68,7 +73,14 @@ namespace DevExpressTreeListDemo
 
         private int? GetSelectedResourceTypeId(TreeListNode node)
         {
-            object value = node.GetValue(ResourceTypeColumnIndex);
+            if (node == null || node.TreeList == null)
+                return null;
+
+            var column = node.TreeList.Columns[ResourceTypeFieldName];
+            if (column == null)
+                return null;
+
+            object value = node.GetValue(column);
             if (value == null)
                 return null;
 
@@ -108,5 +120,60 @@ namespace DevExpressTreeListDemo
             popupView.OptionsView.ShowGroupPanel = false;
             popupView.FocusRectStyle = DevExpress.XtraGrid.Views.Grid.DrawFocusRectStyle.RowFocus;
         }
+
+        private void EditingEditor_ProcessNewValue(object sender, ProcessNewValueEventArgs e)
+        {
+            if (attachedTreeList == null || attachedResourceColumn == null)
+                return;
+
+            string typedText = Convert.ToString(e.DisplayValue);
+            if (string.IsNullOrWhiteSpace(typedText))
+                return;
+
+            TreeListNode node = attachedTreeList.FocusedNode;
+            if (node == null)
+                return;
+
+            int? tipoRecursoId = GetSelectedResourceTypeId(node);
+
+            // Revert the editor to the previous value to suppress invalid-value handling.
+            object previousValue = node.GetValue(attachedResourceColumn);
+            e.DisplayValue = previousValue;
+            e.Handled = true;
+
+            EventHandler<ResourceCreationRequestedEventArgs> handler = ResourceCreationRequested;
+            if (handler == null)
+                return;
+
+            TreeList treeListRef = attachedTreeList;
+            TreeListColumn columnRef = attachedResourceColumn;
+            TreeListNode capturedNode = node;
+            string capturedText = typedText.Trim();
+            int? capturedTipo = tipoRecursoId;
+
+            // Defer execution so the editor finishes closing before opening the modal form.
+            treeListRef.BeginInvoke(new Action(() =>
+            {
+                var args = new ResourceCreationRequestedEventArgs(capturedNode, capturedText, capturedTipo);
+                handler(this, args);
+                if (args.CreatedResourceId.HasValue)
+                    capturedNode.SetValue(columnRef, args.CreatedResourceId.Value);
+            }));
+        }
+    }
+
+    internal sealed class ResourceCreationRequestedEventArgs : EventArgs
+    {
+        public ResourceCreationRequestedEventArgs(TreeListNode node, string typedText, int? tipoRecursoId)
+        {
+            Node = node;
+            TypedText = typedText;
+            TipoRecursoId = tipoRecursoId;
+        }
+
+        public TreeListNode Node { get; }
+        public string TypedText { get; }
+        public int? TipoRecursoId { get; }
+        public int? CreatedResourceId { get; set; }
     }
 }

@@ -100,7 +100,9 @@
   <ItemGroup>
     <Compile Include="CalculationTypeEditorService.cs" />
     <Compile Include="Datos.cs" />
+    <Compile Include="EditableSettingAttribute.cs" />
     <Compile Include="NodeClipboardData.cs" />
+    <Compile Include="SettingsBag.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

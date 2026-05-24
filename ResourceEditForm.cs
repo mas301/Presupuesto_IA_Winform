@@ -25,6 +25,8 @@ namespace DevExpressTreeListDemo
         public string RecursoTexto { get; private set; }
         public decimal? RendimientoManoObra { get; private set; }
         public decimal? RendimientoEquipos { get; private set; }
+        public decimal? DiasDuracion { get; private set; }
+        public bool Independiente { get; private set; }
         public bool CreateNewResourceRequested { get; private set; }
 
         public ResourceEditForm(
@@ -39,6 +41,8 @@ namespace DevExpressTreeListDemo
             string initialAlias,
             decimal? initialRendimientoManoObra,
             decimal? initialRendimientoEquipos,
+            decimal? initialDiasDuracion,
+            bool initialIndependiente,
             bool startBlank,
             bool requireTypeAndResource,
             bool allowCreateFromNameChange)
@@ -60,6 +64,8 @@ namespace DevExpressTreeListDemo
                 initialAlias,
                 initialRendimientoManoObra,
                 initialRendimientoEquipos,
+                initialDiasDuracion,
+                initialIndependiente,
                 startBlank);
         }
 
@@ -134,6 +140,8 @@ namespace DevExpressTreeListDemo
             string initialAlias,
             decimal? initialRendimientoManoObra,
             decimal? initialRendimientoEquipos,
+            decimal? initialDiasDuracion,
+            bool initialIndependiente,
             bool startBlank)
         {
             btnCrear.Visible = allowCreateFromNameChange && !startBlank;
@@ -150,6 +158,8 @@ namespace DevExpressTreeListDemo
                 txtAlias.Text = string.Empty;
                 nudRendimientoManoObra.Value = 0m;
                 nudRendimientoEquipos.Value = 0m;
+                nudDiasDuracion.Value = 0m;
+                chkIndependiente.Checked = initialIndependiente;
                 originalRecursoTextoNormalized = string.Empty;
                 UpdateFieldVisibilityByResourceType();
                 return;
@@ -188,6 +198,8 @@ namespace DevExpressTreeListDemo
 
             nudRendimientoManoObra.Value = NormalizeDecimal(initialRendimientoManoObra);
             nudRendimientoEquipos.Value = NormalizeDecimal(initialRendimientoEquipos);
+            nudDiasDuracion.Value = NormalizeDecimal(initialDiasDuracion);
+            chkIndependiente.Checked = initialIndependiente;
 
             UpdateFieldVisibilityByResourceType();
             UpdateCreateButtonState();
@@ -319,12 +331,16 @@ namespace DevExpressTreeListDemo
             {
                 RendimientoManoObra = nudRendimientoManoObra.Value;
                 RendimientoEquipos = nudRendimientoEquipos.Value;
+                DiasDuracion = nudDiasDuracion.Value;
             }
             else
             {
                 RendimientoManoObra = null;
                 RendimientoEquipos = null;
+                DiasDuracion = null;
             }
+
+            Independiente = chkIndependiente.Checked;
 
             CreateNewResourceRequested = false;
 
@@ -380,12 +396,16 @@ namespace DevExpressTreeListDemo
             {
                 RendimientoManoObra = nudRendimientoManoObra.Value;
                 RendimientoEquipos = nudRendimientoEquipos.Value;
+                DiasDuracion = nudDiasDuracion.Value;
             }
             else
             {
                 RendimientoManoObra = null;
                 RendimientoEquipos = null;
+                DiasDuracion = null;
             }
+
+            Independiente = chkIndependiente.Checked;
 
             CreateNewResourceRequested = true;
 
@@ -408,6 +428,14 @@ namespace DevExpressTreeListDemo
             Close();
         }
 
+        public void PreloadResourceName(string resourceName)
+        {
+            string text = resourceName ?? string.Empty;
+            txtRecurso.Text = text;
+            RecursoTexto = text;
+            originalRecursoTextoNormalized = NormalizeResourceInput(text);
+        }
+
         private void UpdateFieldVisibilityByResourceType()
         {
             bool isSubpresupuesto = IsSelectedType("Subpresupuesto");
@@ -416,7 +444,7 @@ namespace DevExpressTreeListDemo
             lblUnidad.Visible = !isSubpresupuesto;
             cmbUnidad.Visible = !isSubpresupuesto;
 
-            bool showTipoCalculo = !isSubpresupuesto && !isPartida;
+            bool showTipoCalculo = !isSubpresupuesto;
             lblTipoCalculo.Visible = showTipoCalculo;
             cmbTipoCalculo.Visible = showTipoCalculo;
 
@@ -424,6 +452,8 @@ namespace DevExpressTreeListDemo
             nudRendimientoManoObra.Visible = isPartida;
             lblRendimientoEquipos.Visible = isPartida;
             nudRendimientoEquipos.Visible = isPartida;
+            lblDiasDuracion.Visible = isPartida;
+            nudDiasDuracion.Visible = isPartida;
         }
 
         private bool IsSelectedType(string typeName)

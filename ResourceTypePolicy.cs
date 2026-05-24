@@ -7,7 +7,7 @@ namespace DevExpressTreeListDemo
 {
     internal sealed class ResourceTypePolicy
     {
-        private const int ResourceTypeValueIndex = 1;
+        private const string ResourceTypeFieldName = "TipoRecurso";
         private const string TypePartida = "Partida";
         private const string TypeMateriaPrima = "Materia Prima";
         private const string TypeManoDeObra = "Mano de Obra";
@@ -89,7 +89,7 @@ namespace DevExpressTreeListDemo
             if (node == null)
                 return false;
 
-            return string.Equals(NormalizeTypeName(node.GetValue(ResourceTypeValueIndex)), TypePartida, StringComparison.OrdinalIgnoreCase);
+            return string.Equals(NormalizeTypeName(GetResourceTypeValue(node)), TypePartida, StringComparison.OrdinalIgnoreCase);
         }
 
         public bool IsSubpresupuesto(TreeListNode node)
@@ -97,7 +97,7 @@ namespace DevExpressTreeListDemo
             if (node == null)
                 return false;
 
-            return string.Equals(NormalizeTypeName(node.GetValue(ResourceTypeValueIndex)), TypeSubpresupuesto, StringComparison.OrdinalIgnoreCase);
+            return string.Equals(NormalizeTypeName(GetResourceTypeValue(node)), TypeSubpresupuesto, StringComparison.OrdinalIgnoreCase);
         }
 
         public bool CanParentAcceptChildren(TreeListNode parentNode)
@@ -105,7 +105,7 @@ namespace DevExpressTreeListDemo
             if (parentNode == null)
                 return true;
 
-            return !TypesThatCannotHaveChildren.Contains(NormalizeTypeName(parentNode.GetValue(ResourceTypeValueIndex)));
+            return !TypesThatCannotHaveChildren.Contains(NormalizeTypeName(GetResourceTypeValue(parentNode)));
         }
 
         public bool CanBePlacedUnder(TreeListNode parentNode, string childTypeName)
@@ -127,7 +127,7 @@ namespace DevExpressTreeListDemo
             if (node == null)
                 return false;
 
-            string value = NormalizeTypeName(node.GetValue(ResourceTypeValueIndex));
+            string value = NormalizeTypeName(GetResourceTypeValue(node));
             return !string.IsNullOrEmpty(value) && validResourceTypes.Contains(value);
         }
 
@@ -167,11 +167,20 @@ namespace DevExpressTreeListDemo
 
             for (int i = 0; i < node.Nodes.Count; i++)
             {
-                if (TypesThatRequirePartidaParent.Contains(NormalizeTypeName(node.Nodes[i].GetValue(ResourceTypeValueIndex))))
+                if (TypesThatRequirePartidaParent.Contains(NormalizeTypeName(GetResourceTypeValue(node.Nodes[i]))))
                     return true;
             }
 
             return false;
+        }
+
+        private static object GetResourceTypeValue(TreeListNode node)
+        {
+            if (node == null || node.TreeList == null)
+                return null;
+
+            var column = node.TreeList.Columns[ResourceTypeFieldName];
+            return column == null ? null : node.GetValue(column);
         }
     }
 }

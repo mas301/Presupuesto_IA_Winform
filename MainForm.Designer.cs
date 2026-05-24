@@ -379,18 +379,21 @@ namespace DevExpressTreeListDemo
             // treeList1
             // 
             this.treeList1.Columns.AddRange(new DevExpress.XtraTreeList.Columns.TreeListColumn[] {
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Item", VisibleIndex = 0, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Nombre", VisibleIndex = 1, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Tipo", VisibleIndex = 2, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Unidad", VisibleIndex = 3, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Tipo Calculo", VisibleIndex = 4, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Horas Jornal", VisibleIndex = 5, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Rendimiento", VisibleIndex = 6, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Cuadrilla", VisibleIndex = 7, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Cantidad", VisibleIndex = 8, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Valor Unitario", VisibleIndex = 9, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Valor Total", VisibleIndex = 10, Visible = true },
-            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Alias", Visible = false }});
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Item", FieldName = "Item", Name = "colItem", VisibleIndex = 0, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Tipo Recurso", FieldName = "TipoRecurso", Name = "colTipoRecurso", VisibleIndex = 1, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Recurso", FieldName = "Recurso", Name = "colRecurso", VisibleIndex = 2, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Independiente", FieldName = "Independiente", Name = "colIndependiente", VisibleIndex = 3, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Unidad", FieldName = "Unidad", Name = "colUnidad", VisibleIndex = 4, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Tipo Calculo", FieldName = "TipoCalculo", Name = "colTipoCalculo", VisibleIndex = 5, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Cantidad", FieldName = "Cantidad", Name = "colCantidad", VisibleIndex = 6, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Horas Jornal", FieldName = "HorasJornal", Name = "colHorasJornal", VisibleIndex = 7, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Rendimiento", FieldName = "Rendimiento", Name = "colRendimiento", VisibleIndex = 8, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Peso Unitario", FieldName = "PesoUnitario", Name = "colPesoUnitario", VisibleIndex = 9, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "DiasDuracion", FieldName = "DiasDuracion", Name = "colDiasDuracion", VisibleIndex = 10, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "CantidadTotal", FieldName = "CantidadTotal", Name = "colCantidadTotal", VisibleIndex = 11, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Valor Unitario", FieldName = "ValorUnitario", Name = "colValorUnitario", VisibleIndex = 12, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Valor Total", FieldName = "ValorTotal", Name = "colValorTotal", VisibleIndex = 13, Visible = true },
+            new DevExpress.XtraTreeList.Columns.TreeListColumn() { Caption = "Alias", FieldName = "Alias", Name = "colAlias", Visible = false }});
             this.treeList1.ContextMenuStrip = null;
             this.treeList1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeList1.Location = new System.Drawing.Point(0, 40);

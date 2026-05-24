@@ -1,26 +1,16 @@
 using DevExpress.XtraTreeList;
+using DevExpress.XtraTreeList.Columns;
 using DevExpress.XtraTreeList.Nodes;
 using System;
+using System.Collections.Generic;
 
 namespace DevExpressTreeListDemo
 {
     internal sealed class TreeListItemService
     {
-        private const int ValueIndexItemCode = 0;
-        private const int ValueIndexResourceType = 1;
-        private const int ValueIndexResource = 2;
-        private const int ValueIndexUnidad = 3;
-        private const int ValueIndexCalculationType = 4;
-        private const int ValueIndexHoursPerDay = 5;
-        private const int ValueIndexPerformance = 6;
-        private const int ValueIndexCrew = 7;
-        private const int ValueIndexQuantity = 8;
-        private const int ValueIndexUnitValue = 9;
-        private const int ValueIndexTotalValue = 10;
-        private const int ValueIndexAlias = 11;
-
-        private static readonly object[] NewNodeDefaults =
-            { string.Empty, null, null, null, null, null, null, null, null, null, null, string.Empty };
+        private const string FieldItem = MainForm.ColumnNames.Item;
+        private const string FieldResourceType = MainForm.ColumnNames.TipoRecurso;
+        private const string FieldAlias = MainForm.ColumnNames.Alias;
 
         private readonly TreeList treeList;
         private ResourceTypePolicy policy;
@@ -120,25 +110,20 @@ namespace DevExpressTreeListDemo
 
         public NodeClipboardData CaptureNode(TreeListNode node)
         {
+            var values = new Dictionary<string, object>(StringComparer.Ordinal);
+            for (int i = 0; i < treeList.Columns.Count; i++)
+            {
+                TreeListColumn column = treeList.Columns[i];
+                if (string.IsNullOrEmpty(column.FieldName))
+                    continue;
+                values[column.FieldName] = node.GetValue(column);
+            }
+
             NodeClipboardData data = new NodeClipboardData
             {
-                Values = new object[]
-                {
-                    node.GetValue(ValueIndexItemCode),
-                    node.GetValue(ValueIndexResourceType),
-                    node.GetValue(ValueIndexResource),
-                    node.GetValue(ValueIndexUnidad),
-                    node.GetValue(ValueIndexCalculationType),
-                    node.GetValue(ValueIndexHoursPerDay),
-                    node.GetValue(ValueIndexPerformance),
-                    node.GetValue(ValueIndexCrew),
-                    node.GetValue(ValueIndexQuantity),
-                    node.GetValue(ValueIndexUnitValue),
-                    node.GetValue(ValueIndexTotalValue),
-                    node.GetValue(ValueIndexAlias)
-                },
+                Values = values,
                 PartidaCalculationData = ClonePartidaCalculationData(node.Tag as PartidaCalculationData),
-                Children = new System.Collections.Generic.List<NodeClipboardData>()
+                Children = new List<NodeClipboardData>()
             };
 
             for (int i = 0; i < node.Nodes.Count; i++)
@@ -170,7 +155,7 @@ namespace DevExpressTreeListDemo
             }
 
             TreeListNode targetParent = targetNode == null ? null : targetNode.ParentNode;
-            if (!policy.CanBePlacedUnder(targetParent, policy.NormalizeTypeName(data.Values[ValueIndexResourceType])))
+            if (!policy.CanBePlacedUnder(targetParent, policy.NormalizeTypeName(GetClipboardValue(data, FieldResourceType))))
                 return false;
 
             RunUnbound(() =>
@@ -196,7 +181,7 @@ namespace DevExpressTreeListDemo
             if (selectedNode == null)
                 return false;
 
-            string selectedType = policy.NormalizeTypeName(selectedNode.GetValue(ValueIndexResourceType));
+            string selectedType = policy.NormalizeTypeName(GetNodeFieldValue(selectedNode, FieldResourceType));
             TreeListNode newParent = GetPreviousSibling(selectedNode);
             if (!policy.CanBePlacedUnder(newParent, selectedType))
                 return false;
@@ -220,7 +205,7 @@ namespace DevExpressTreeListDemo
             if (selectedNode == null)
                 return false;
 
-            string selectedType = policy.NormalizeTypeName(selectedNode.GetValue(ValueIndexResourceType));
+            string selectedType = policy.NormalizeTypeName(GetNodeFieldValue(selectedNode, FieldResourceType));
             TreeListNode currentParent = selectedNode.ParentNode;
             if (currentParent == null)
                 return false;
@@ -289,18 +274,42 @@ namespace DevExpressTreeListDemo
 
         private object[] CreateNewNodeValues()
         {
-            return (object[])NewNodeDefaults.Clone();
+            var values = new object[treeList.Columns.Count];
+            TreeListColumn itemColumn = treeList.Columns[FieldItem];
+            if (itemColumn != null)
+                values[itemColumn.AbsoluteIndex] = string.Empty;
+            TreeListColumn aliasColumn = treeList.Columns[FieldAlias];
+            if (aliasColumn != null)
+                values[aliasColumn.AbsoluteIndex] = string.Empty;
+            return values;
         }
 
         private void AssignNodeCode(TreeListNode node, string code)
         {
-            node.SetValue(ValueIndexItemCode, code);
+            TreeListColumn itemColumn = treeList.Columns[FieldItem];
+            if (itemColumn != null)
+                node.SetValue(itemColumn, code);
 
             for (int i = 0; i < node.Nodes.Count; i++)
             {
                 string childCode = code + "." + (i + 1).ToString("D2");
                 AssignNodeCode(node.Nodes[i], childCode);
             }
+        }
+
+        internal static object GetClipboardValue(NodeClipboardData data, string fieldName)
+        {
+            if (data == null || data.Values == null || string.IsNullOrEmpty(fieldName))
+                return null;
+            return data.Values.TryGetValue(fieldName, out object value) ? value : null;
+        }
+
+        private object GetNodeFieldValue(TreeListNode node, string fieldName)
+        {
+            if (node == null || string.IsNullOrEmpty(fieldName))
+                return null;
+            TreeListColumn column = treeList.Columns[fieldName];
+            return column == null ? null : node.GetValue(column);
         }
 
         private TreeListNode GetPreviousSibling(TreeListNode node)
@@ -318,13 +327,35 @@ namespace DevExpressTreeListDemo
 
         private TreeListNode AppendNodeFromClipboard(TreeListNode parent, NodeClipboardData data)
         {
-            TreeListNode node = treeList.AppendNode((object[])data.Values.Clone(), parent);
+            TreeListNode node = treeList.AppendNode(CreateNewNodeValues(), parent);
+            ApplyClipboardValues(node, data);
             node.Tag = ClonePartidaCalculationData(data.PartidaCalculationData);
 
             for (int i = 0; i < data.Children.Count; i++)
                 AppendNodeFromClipboard(node, data.Children[i]);
 
             return node;
+        }
+
+        public TreeListNode AppendCapturedSubtree(TreeListNode parent, NodeClipboardData data)
+        {
+            if (data == null)
+                return null;
+
+            return AppendNodeFromClipboard(parent, CloneClipboardData(data));
+        }
+
+        private void ApplyClipboardValues(TreeListNode node, NodeClipboardData data)
+        {
+            if (node == null || data == null || data.Values == null)
+                return;
+
+            foreach (var pair in data.Values)
+            {
+                TreeListColumn column = treeList.Columns[pair.Key];
+                if (column != null)
+                    node.SetValue(column, pair.Value);
+            }
         }
 
         private TreeListNode MoveSubtree(TreeListNode sourceNode, TreeListNode newParent, int? newIndex)
@@ -346,9 +377,9 @@ namespace DevExpressTreeListDemo
 
             NodeClipboardData clone = new NodeClipboardData
             {
-                Values = (object[])source.Values.Clone(),
+                Values = source.Values == null ? null : new Dictionary<string, object>(source.Values, StringComparer.Ordinal),
                 PartidaCalculationData = ClonePartidaCalculationData(source.PartidaCalculationData),
-                Children = new System.Collections.Generic.List<NodeClipboardData>()
+                Children = new List<NodeClipboardData>()
             };
 
             for (int i = 0; i < source.Children.Count; i++)

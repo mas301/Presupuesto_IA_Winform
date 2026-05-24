@@ -15,15 +15,16 @@ namespace DevExpressTreeListDemo
 
             bool allowsCalculationDetail = IsCalculationType2Or3(e.Node);
             bool isPartida = resourceTypePolicy.IsPartida(e.Node);
-            int columnIndex = GetColumnIndex(e.Column);
+            bool isCalculationType8 = IsCalculationType8(e.Node);
             if (!allowsCalculationDetail
-                && columnIndex == HoursPerDayColumnIndex)
+                && !isCalculationType8
+                && e.Column == columnHorasJornal)
             {
                 e.DisplayText = string.Empty;
                 return;
             }
 
-            if ((columnIndex == PerformanceColumnIndex || columnIndex == CrewColumnIndex)
+            if (e.Column == columnRendimiento
                 && (!allowsCalculationDetail || isPartida))
             {
                 e.DisplayText = string.Empty;
@@ -32,7 +33,7 @@ namespace DevExpressTreeListDemo
 
             if (!resourceTypePolicy.IsSubpresupuesto(e.Node))
             {
-                if (columnIndex == UnitColumnIndex)
+                if (e.Column == columnUnidad)
                 {
                     int? unitId = ToNullableInt(e.Value);
                     if (unitId.HasValue && unitDisplayNamesById != null && unitDisplayNamesById.TryGetValue(unitId.Value, out string unitDisplayName))
@@ -42,10 +43,10 @@ namespace DevExpressTreeListDemo
                 return;
             }
 
-            if (columnIndex == QuantityColumnIndex || columnIndex == UnitValueColumnIndex)
+            if (e.Column == columnValorUnitario)
                 e.DisplayText = string.Empty;
 
-            if (columnIndex == UnitColumnIndex)
+            if (e.Column == columnUnidad)
             {
                 e.DisplayText = string.Empty;
                 return;
@@ -61,18 +62,26 @@ namespace DevExpressTreeListDemo
             bool isPartida = resourceTypePolicy.IsPartida(e.Node);
             bool allowsCalculationDetail = IsCalculationType2Or3(e.Node);
             bool isCalculationType4 = IsCalculationType4(e.Node);
+            bool isCalculationType5 = IsCalculationType5(e.Node);
+            bool isCalculationType7 = IsCalculationType7(e.Node);
+            bool isCalculationType8 = IsCalculationType8(e.Node);
             bool isSubpresupuesto = resourceTypePolicy.IsSubpresupuesto(e.Node);
             bool isReadOnlyCell = !e.Column.OptionsColumn.AllowEdit
-                || GetColumnIndex(e.Column) == TotalValueColumnIndex
-                || GetColumnIndex(e.Column) == HoursPerDayColumnIndex
-                || GetColumnIndex(e.Column) == PerformanceColumnIndex
-                || (GetColumnIndex(e.Column) == CalculationTypeColumnIndex && (isPartida || isSubpresupuesto))
-                || (GetColumnIndex(e.Column) == CrewColumnIndex && (!allowsCalculationDetail || isPartida))
-                || (GetColumnIndex(e.Column) == QuantityColumnIndex && isSubpresupuesto)
-                || (GetColumnIndex(e.Column) == UnitValueColumnIndex && isSubpresupuesto)
-                || (GetColumnIndex(e.Column) == UnitValueColumnIndex && isPartida)
-                || (GetColumnIndex(e.Column) == UnitValueColumnIndex && isCalculationType4)
-                || (GetColumnIndex(e.Column) == QuantityColumnIndex && allowsCalculationDetail);
+                || e.Column == columnValorTotal
+                || e.Column == columnHorasJornal
+                || e.Column == columnRendimiento
+                || (e.Column == columnTipoCalculo && (isPartida || isSubpresupuesto))
+                || (e.Column == columnCantidadTotal && isSubpresupuesto)
+                || (e.Column == columnValorUnitario && isSubpresupuesto)
+                || (e.Column == columnValorUnitario && isPartida && !isCalculationType7)
+                || (e.Column == columnCantidadTotal && isPartida && isCalculationType7)
+                || (e.Column == columnValorUnitario && isCalculationType4)
+                || (e.Column == columnCantidadTotal && allowsCalculationDetail)
+                || (e.Column == columnCantidadTotal && isCalculationType5)
+                || (e.Column == columnCantidadTotal && isCalculationType8)
+                || (e.Column == columnCantidad && !isCalculationType5 && !(isPartida && isCalculationType7) && !allowsCalculationDetail && !isCalculationType8)
+                || (e.Column == columnPesoUnitario && !isCalculationType5)
+                || (e.Column == columnDiasDuracion && !isPartida);
 
             if (isReadOnlyCell)
                 e.Appearance.BackColor = Color.WhiteSmoke;
@@ -93,55 +102,71 @@ namespace DevExpressTreeListDemo
             if (treeList1.FocusedNode == null || treeList1.FocusedColumn == null)
                 return;
 
-            int columnIndex = GetColumnIndex(treeList1.FocusedColumn);
+            var column = treeList1.FocusedColumn;
             bool allowsCalculationDetail = IsCalculationType2Or3(treeList1.FocusedNode);
             bool isCalculationType4 = IsCalculationType4(treeList1.FocusedNode);
             bool isSubpresupuesto = resourceTypePolicy.IsSubpresupuesto(treeList1.FocusedNode);
             bool isPartida = resourceTypePolicy.IsPartida(treeList1.FocusedNode);
 
-            if (columnIndex == TotalValueColumnIndex)
+            if (column == columnValorTotal)
             {
                 e.Cancel = true;
                 return;
             }
 
-            if (isSubpresupuesto && (columnIndex == QuantityColumnIndex || columnIndex == UnitValueColumnIndex))
+            if (isSubpresupuesto && (column == columnCantidadTotal || column == columnValorUnitario))
             {
                 e.Cancel = true;
                 return;
             }
 
-            if (columnIndex == HoursPerDayColumnIndex)
+            if (column == columnHorasJornal)
             {
                 e.Cancel = true;
                 return;
             }
 
-            if (columnIndex == PerformanceColumnIndex)
+            if (column == columnRendimiento)
             {
                 e.Cancel = true;
                 return;
             }
 
-            if (columnIndex == CalculationTypeColumnIndex)
+            if (column == columnTipoCalculo)
             {
                 e.Cancel = true;
                 return;
             }
 
-            if (columnIndex == CrewColumnIndex && (!allowsCalculationDetail || isPartida))
-            {
-                e.Cancel = true;
-                return;
-            }
-
-            if (columnIndex == UnitValueColumnIndex && resourceTypePolicy.IsPartida(treeList1.FocusedNode))
+            if (column == columnValorUnitario && resourceTypePolicy.IsPartida(treeList1.FocusedNode) && !IsCalculationType7(treeList1.FocusedNode))
                 e.Cancel = true;
 
-            if (columnIndex == UnitValueColumnIndex && isCalculationType4)
+            if (column == columnCantidadTotal && resourceTypePolicy.IsPartida(treeList1.FocusedNode) && IsCalculationType7(treeList1.FocusedNode))
                 e.Cancel = true;
 
-            if (allowsCalculationDetail && columnIndex == QuantityColumnIndex)
+            if (column == columnValorUnitario && isCalculationType4)
+                e.Cancel = true;
+
+            if (allowsCalculationDetail && column == columnCantidadTotal)
+                e.Cancel = true;
+
+            if (IsCalculationType5(treeList1.FocusedNode) && column == columnCantidadTotal)
+                e.Cancel = true;
+
+            if (!IsCalculationType5(treeList1.FocusedNode)
+                && !(isPartida && IsCalculationType7(treeList1.FocusedNode))
+                && !allowsCalculationDetail
+                && !IsCalculationType8(treeList1.FocusedNode)
+                && column == columnCantidad)
+                e.Cancel = true;
+
+            if (column == columnCantidadTotal && IsCalculationType8(treeList1.FocusedNode))
+                e.Cancel = true;
+
+            if (column == columnDiasDuracion && !isPartida)
+                e.Cancel = true;
+
+            if (!IsCalculationType5(treeList1.FocusedNode) && column == columnPesoUnitario)
                 e.Cancel = true;
         }
 
@@ -153,16 +178,16 @@ namespace DevExpressTreeListDemo
             if (e.Node == null || e.Column == null)
                 return;
 
-            int columnIndex = GetColumnIndex(e.Column);
+            var column = e.Column;
 
-            if (columnIndex == ResourceTypeColumnIndex)
+            if (column == columnTipoRecurso)
             {
                 suppressPersistence = true;
                 try
                 {
-                    e.Node.SetValue(ResourceColumnIndex, null);
-                    e.Node.SetValue(UnitColumnIndex, null);
-                    e.Node.SetValue(CalculationTypeColumnIndex, null);
+                    e.Node.SetValue(columnRecurso, null);
+                    e.Node.SetValue(columnUnidad, null);
+                    e.Node.SetValue(columnTipoCalculo, null);
                 }
                 finally
                 {
@@ -170,18 +195,18 @@ namespace DevExpressTreeListDemo
                 }
             }
 
-            if (columnIndex == ResourceColumnIndex)
+            if (column == columnRecurso)
             {
                 suppressPersistence = true;
                 try
                 {
-                    object rawResourceValue = e.Node.GetValue(ResourceColumnIndex);
+                    object rawResourceValue = e.Node.GetValue(columnRecurso);
                     int? resourceId = ToNullableInt(rawResourceValue);
                     if (!resourceId.HasValue)
                     {
                         resourceId = ResolveResourceIdFromNodeValue(e.Node, rawResourceValue);
                         if (resourceId.HasValue)
-                            e.Node.SetValue(ResourceColumnIndex, resourceId.Value);
+                            e.Node.SetValue(columnRecurso, resourceId.Value);
                     }
 
                     int? unitId = null;
@@ -202,21 +227,30 @@ namespace DevExpressTreeListDemo
 
                     if (unitId.HasValue)
                     {
-                        e.Node.SetValue(UnitColumnIndex, unitId.Value);
+                        e.Node.SetValue(columnUnidad, unitId.Value);
                     }
                     else
                     {
-                        e.Node.SetValue(UnitColumnIndex, null);
+                        e.Node.SetValue(columnUnidad, null);
                     }
 
                     if (calculationTypeId.HasValue)
                     {
-                        e.Node.SetValue(CalculationTypeColumnIndex, calculationTypeId.Value);
+                        e.Node.SetValue(columnTipoCalculo, calculationTypeId.Value);
                     }
                     else
                     {
-                        e.Node.SetValue(CalculationTypeColumnIndex, null);
+                        e.Node.SetValue(columnTipoCalculo, null);
                     }
+
+                    bool independiente = false;
+                    if (resourceId.HasValue
+                        && resourcesById != null
+                        && resourcesById.TryGetValue(resourceId.Value, out RecursoDto independienteResource))
+                    {
+                        independiente = independienteResource.Independiente;
+                    }
+                    e.Node.SetValue(columnIndependiente, independiente);
 
                     if (resourceTypePolicy.IsPartida(e.Node))
                     {
@@ -224,7 +258,7 @@ namespace DevExpressTreeListDemo
                             && resourcesById != null
                             && resourcesById.TryGetValue(resourceId.Value, out RecursoDto resource))
                         {
-                            SetPartidaCalculationData(e.Node, resource.Rendimiento, resource.Cuadrilla);
+                            SetPartidaCalculationData(e.Node, resource.Rendimiento, resource.RendimientoEquipos);
                             SyncPartidaChildrenFromTemplate(e.Node, resourceId.Value);
                         }
                         else
@@ -240,37 +274,41 @@ namespace DevExpressTreeListDemo
                 }
             }
 
-            if (columnIndex == UnitValueColumnIndex)
+            if (column == columnValorUnitario)
                 ReplicateManualUnitValueToSameResources(e.Node);
 
-            if (columnIndex == CrewColumnIndex || columnIndex == QuantityColumnIndex)
-                ReplicatePartidaManualValuesByResourceId(e.Node, columnIndex);
+            if (column == columnCantidadTotal
+                || column == columnCantidad
+                || column == columnPesoUnitario)
+                ReplicatePartidaManualValuesByResourceId(e.Node, column);
 
-            if (columnIndex == ResourceTypeColumnIndex
-                || columnIndex == ResourceColumnIndex
-                || columnIndex == CalculationTypeColumnIndex
-                || columnIndex == HoursPerDayColumnIndex
-                || columnIndex == PerformanceColumnIndex
-                || columnIndex == CrewColumnIndex
-                || columnIndex == QuantityColumnIndex
-                || columnIndex == UnitValueColumnIndex)
+            if (column == columnTipoRecurso
+                || column == columnRecurso
+                || column == columnTipoCalculo
+                || column == columnHorasJornal
+                || column == columnRendimiento
+                || column == columnCantidad
+                || column == columnPesoUnitario
+                || column == columnCantidadTotal
+                || column == columnValorUnitario)
             {
                 RecalculateNumericRules();
                 MarkPendingAutoSave();
             }
         }
 
-        private int GetColumnIndex(DevExpress.XtraTreeList.Columns.TreeListColumn column)
+        private bool IsPartidaIndependiente(TreeListNode node)
         {
-            if (column == null || treeList1 == null || treeList1.Columns == null)
-                return -1;
+            if (node == null || !resourceTypePolicy.IsPartida(node))
+                return false;
 
-            return treeList1.Columns.IndexOf(column);
+            object value = node.GetValue(columnIndependiente);
+            return value is bool flag && flag;
         }
 
-        private void ReplicatePartidaManualValuesByResourceId(TreeListNode sourceNode, int columnIndex)
+        private void ReplicatePartidaManualValuesByResourceId(TreeListNode sourceNode, DevExpress.XtraTreeList.Columns.TreeListColumn column)
         {
-            if (sourceNode == null)
+            if (sourceNode == null || column == null)
                 return;
 
             TreeListNode sourcePartida = FindContainingPartidaOrSelf(sourceNode);
@@ -278,15 +316,19 @@ namespace DevExpressTreeListDemo
                 return;
 
             // La cantidad del nodo Partida no se replica entre partidas iguales.
-            if (columnIndex == QuantityColumnIndex && sourceNode == sourcePartida)
+            if (column == columnCantidadTotal && sourceNode == sourcePartida)
                 return;
 
-            int? sourcePartidaResourceId = ToNullableInt(sourcePartida.GetValue(ResourceColumnIndex));
+            // Las partidas marcadas como Independiente no propagan cambios.
+            if (IsPartidaIndependiente(sourcePartida))
+                return;
+
+            int? sourcePartidaResourceId = ToNullableInt(sourcePartida.GetValue(columnRecurso));
             if (!sourcePartidaResourceId.HasValue)
                 return;
 
             List<int> relativePath = BuildRelativePath(sourcePartida, sourceNode);
-            object value = sourceNode.GetValue(columnIndex);
+            object value = sourceNode.GetValue(column);
 
             suppressPersistence = true;
             try
@@ -296,21 +338,75 @@ namespace DevExpressTreeListDemo
                     if (node == sourcePartida || !resourceTypePolicy.IsPartida(node))
                         continue;
 
-                    int? targetPartidaResourceId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                    int? targetPartidaResourceId = ToNullableInt(node.GetValue(columnRecurso));
                     if (!targetPartidaResourceId.HasValue || targetPartidaResourceId.Value != sourcePartidaResourceId.Value)
+                        continue;
+
+                    // Las partidas Independiente tampoco reciben cambios desde otras.
+                    if (IsPartidaIndependiente(node))
                         continue;
 
                     TreeListNode targetNode = ResolveNodeByRelativePath(node, relativePath);
                     if (targetNode == null)
                         continue;
 
-                    targetNode.SetValue(columnIndex, value);
+                    targetNode.SetValue(column, value);
                 }
             }
             finally
             {
                 suppressPersistence = false;
             }
+        }
+
+        private void ReplicatePartidaStructureToPeers(TreeListNode sourcePartida)
+        {
+            if (sourcePartida == null || !resourceTypePolicy.IsPartida(sourcePartida))
+                return;
+
+            if (IsPartidaIndependiente(sourcePartida))
+                return;
+
+            int? sourceResourceId = ToNullableInt(sourcePartida.GetValue(columnRecurso));
+            if (!sourceResourceId.HasValue)
+                return;
+
+            var childData = new List<NodeClipboardData>();
+            for (int i = 0; i < sourcePartida.Nodes.Count; i++)
+                childData.Add(treeListItemService.CaptureNode(sourcePartida.Nodes[i]));
+
+            suppressPersistence = true;
+            treeList1.BeginUnboundLoad();
+            try
+            {
+                foreach (TreeListNode node in EnumerateAllNodes())
+                {
+                    if (node == sourcePartida || !resourceTypePolicy.IsPartida(node))
+                        continue;
+
+                    int? targetId = ToNullableInt(node.GetValue(columnRecurso));
+                    if (!targetId.HasValue || targetId.Value != sourceResourceId.Value)
+                        continue;
+
+                    if (IsPartidaIndependiente(node))
+                        continue;
+
+                    while (node.Nodes.Count > 0)
+                        node.Nodes[0].Remove();
+
+                    for (int i = 0; i < childData.Count; i++)
+                        treeListItemService.AppendCapturedSubtree(node, childData[i]);
+
+                    node.Expanded = true;
+                }
+            }
+            finally
+            {
+                treeList1.EndUnboundLoad();
+                suppressPersistence = false;
+            }
+
+            treeListItemService.AssignItemNumbers();
         }
 
         private TreeListNode FindContainingPartidaOrSelf(TreeListNode node)
@@ -365,11 +461,11 @@ namespace DevExpressTreeListDemo
             if (sourceNode == null || IsUnitValueAutomaticallyCalculated(sourceNode))
                 return;
 
-            int? resourceId = ToNullableInt(sourceNode.GetValue(ResourceColumnIndex));
+            int? resourceId = ToNullableInt(sourceNode.GetValue(columnRecurso));
             if (!resourceId.HasValue)
                 return;
 
-            object unitValue = sourceNode.GetValue(UnitValueColumnIndex);
+            object unitValue = sourceNode.GetValue(columnValorUnitario);
 
             suppressPersistence = true;
             try
@@ -379,11 +475,11 @@ namespace DevExpressTreeListDemo
                     if (node == sourceNode || IsUnitValueAutomaticallyCalculated(node))
                         continue;
 
-                    int? nodeResourceId = ToNullableInt(node.GetValue(ResourceColumnIndex));
+                    int? nodeResourceId = ToNullableInt(node.GetValue(columnRecurso));
                     if (!nodeResourceId.HasValue || nodeResourceId.Value != resourceId.Value)
                         continue;
 
-                    node.SetValue(UnitValueColumnIndex, unitValue);
+                    node.SetValue(columnValorUnitario, unitValue);
                 }
             }
             finally
@@ -405,7 +501,7 @@ namespace DevExpressTreeListDemo
             if (node == null)
                 return false;
 
-            int? calculationType = ToNullableInt(node.GetValue(CalculationTypeColumnIndex));
+            int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
             return calculationType.HasValue && (calculationType.Value == 2 || calculationType.Value == 3);
         }
 
@@ -414,8 +510,44 @@ namespace DevExpressTreeListDemo
             if (node == null)
                 return false;
 
-            int? calculationType = ToNullableInt(node.GetValue(CalculationTypeColumnIndex));
+            int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
             return calculationType.HasValue && calculationType.Value == 4;
+        }
+
+        private bool IsCalculationType5(TreeListNode node)
+        {
+            if (node == null)
+                return false;
+
+            int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
+            return calculationType.HasValue && calculationType.Value == 5;
+        }
+
+        private bool IsCalculationType6(TreeListNode node)
+        {
+            if (node == null)
+                return false;
+
+            int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
+            return calculationType.HasValue && calculationType.Value == 6;
+        }
+
+        private bool IsCalculationType7(TreeListNode node)
+        {
+            if (node == null)
+                return false;
+
+            int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
+            return calculationType.HasValue && calculationType.Value == 7;
+        }
+
+        private bool IsCalculationType8(TreeListNode node)
+        {
+            if (node == null)
+                return false;
+
+            int? calculationType = ToNullableInt(node.GetValue(columnTipoCalculo));
+            return calculationType.HasValue && calculationType.Value == 8;
         }
 
         private int? ResolveResourceIdFromNodeValue(TreeListNode node, object resourceValue)
@@ -428,7 +560,7 @@ namespace DevExpressTreeListDemo
                 return null;
 
             typedText = typedText.Trim();
-            int? tipoRecursoId = ToNullableInt(node == null ? null : node.GetValue(ResourceTypeColumnIndex));
+            int? tipoRecursoId = ToNullableInt(node == null ? null : node.GetValue(columnTipoRecurso));
 
             int? matchedId = null;
             foreach (KeyValuePair<int, RecursoDto> item in resourcesById)
@@ -479,38 +611,25 @@ namespace DevExpressTreeListDemo
                     }
                     else
                     {
-                        child = treeList1.AppendNode(new object[]
-                        {
-                            string.Empty,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            string.Empty
-                        }, partidaNode);
+                        child = treeList1.AppendNode(null, partidaNode);
                     }
 
                     int? tipoRecursoId = null;
                     if (resourcesById != null && resourcesById.TryGetValue(template.RecursoId, out RecursoDto resource))
                         tipoRecursoId = resource.TipoRecursoId;
 
-                    int? previousResourceId = ToNullableInt(child.GetValue(ResourceColumnIndex));
-                    object previousUnitValue = child.GetValue(UnitValueColumnIndex);
+                    int? previousResourceId = ToNullableInt(child.GetValue(columnRecurso));
+                    object previousUnitValue = child.GetValue(columnValorUnitario);
 
-                    child.SetValue(ResourceTypeColumnIndex, tipoRecursoId.HasValue ? (object)tipoRecursoId.Value : null);
-                    child.SetValue(ResourceColumnIndex, template.RecursoId);
-                    child.SetValue(UnitColumnIndex, template.UnidadId.HasValue ? (object)template.UnidadId.Value : null);
-                    child.SetValue(CalculationTypeColumnIndex, template.TipoCalculoId.HasValue ? (object)template.TipoCalculoId.Value : null);
-                    child.SetValue(HoursPerDayColumnIndex, null);
-                    child.SetValue(PerformanceColumnIndex, template.Rendimiento.HasValue ? (object)template.Rendimiento.Value : null);
-                    child.SetValue(CrewColumnIndex, template.Cuadrilla.HasValue ? (object)template.Cuadrilla.Value : null);
-                    child.SetValue(QuantityColumnIndex, template.Cantidad);
+                    child.SetValue(columnTipoRecurso, tipoRecursoId.HasValue ? (object)tipoRecursoId.Value : null);
+                    child.SetValue(columnRecurso, template.RecursoId);
+                    child.SetValue(columnUnidad, template.UnidadId.HasValue ? (object)template.UnidadId.Value : null);
+                    child.SetValue(columnTipoCalculo, template.TipoCalculoId.HasValue ? (object)template.TipoCalculoId.Value : null);
+                    child.SetValue(columnHorasJornal, null);
+                    child.SetValue(columnRendimiento, template.Rendimiento.HasValue ? (object)template.Rendimiento.Value : null);
+                    child.SetValue(columnCantidad, template.Cantidad.HasValue ? (object)template.Cantidad.Value : null);
+                    child.SetValue(columnPesoUnitario, template.PesoUnitario.HasValue ? (object)template.PesoUnitario.Value : null);
+                    child.SetValue(columnCantidadTotal, template.CantidadTotal);
 
                     object unitValueToApply = null;
                     if (!IsUnitValueAutomaticallyCalculated(child)
@@ -526,8 +645,8 @@ namespace DevExpressTreeListDemo
                         unitValueToApply = previousUnitValue;
                     }
 
-                    child.SetValue(UnitValueColumnIndex, unitValueToApply);
-                    child.SetValue(TotalValueColumnIndex, null);
+                    child.SetValue(columnValorUnitario, unitValueToApply);
+                    child.SetValue(columnValorTotal, null);
                 }
             }
             finally
@@ -550,8 +669,8 @@ namespace DevExpressTreeListDemo
                 if (IsUnitValueAutomaticallyCalculated(node))
                     continue;
 
-                int? resourceId = ToNullableInt(node.GetValue(ResourceColumnIndex));
-                decimal? unitValue = ToNullableDecimal(node.GetValue(UnitValueColumnIndex));
+                int? resourceId = ToNullableInt(node.GetValue(columnRecurso));
+                decimal? unitValue = ToNullableDecimal(node.GetValue(columnValorUnitario));
                 if (!resourceId.HasValue || !unitValue.HasValue)
                     continue;
 

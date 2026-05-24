@@ -17,6 +17,9 @@ namespace DevExpressTreeListDemo
         private System.Windows.Forms.NumericUpDown nudRendimientoManoObra;
         private System.Windows.Forms.Label lblRendimientoEquipos;
         private System.Windows.Forms.NumericUpDown nudRendimientoEquipos;
+        private System.Windows.Forms.Label lblDiasDuracion;
+        private System.Windows.Forms.NumericUpDown nudDiasDuracion;
+        private System.Windows.Forms.CheckBox chkIndependiente;
         private System.Windows.Forms.Button btnCrear;
         private System.Windows.Forms.Button btnGrabar;
         private System.Windows.Forms.Button btnCancelar;
@@ -46,11 +49,15 @@ namespace DevExpressTreeListDemo
             this.nudRendimientoManoObra = new System.Windows.Forms.NumericUpDown();
             this.lblRendimientoEquipos = new System.Windows.Forms.Label();
             this.nudRendimientoEquipos = new System.Windows.Forms.NumericUpDown();
+            this.lblDiasDuracion = new System.Windows.Forms.Label();
+            this.nudDiasDuracion = new System.Windows.Forms.NumericUpDown();
+            this.chkIndependiente = new System.Windows.Forms.CheckBox();
             this.btnCrear = new System.Windows.Forms.Button();
             this.btnGrabar = new System.Windows.Forms.Button();
             this.btnCancelar = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.nudRendimientoManoObra)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudRendimientoEquipos)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudDiasDuracion)).BeginInit();
             this.SuspendLayout();
             // 
             // lblTipoRecurso
@@ -191,33 +198,65 @@ namespace DevExpressTreeListDemo
             this.nudRendimientoEquipos.Size = new System.Drawing.Size(320, 20);
             this.nudRendimientoEquipos.TabIndex = 13;
             // 
+            // lblDiasDuracion
+            // 
+            this.lblDiasDuracion.AutoSize = true;
+            this.lblDiasDuracion.Location = new System.Drawing.Point(16, 416);
+            this.lblDiasDuracion.Name = "lblDiasDuracion";
+            this.lblDiasDuracion.Size = new System.Drawing.Size(85, 13);
+            this.lblDiasDuracion.TabIndex = 14;
+            this.lblDiasDuracion.Text = "Dias Duracion";
+            // 
+            // nudDiasDuracion
+            // 
+            this.nudDiasDuracion.DecimalPlaces = 5;
+            this.nudDiasDuracion.Location = new System.Drawing.Point(19, 432);
+            this.nudDiasDuracion.Maximum = new decimal(new int[] {
+            999999999,
+            0,
+            0,
+            0});
+            this.nudDiasDuracion.Name = "nudDiasDuracion";
+            this.nudDiasDuracion.Size = new System.Drawing.Size(320, 20);
+            this.nudDiasDuracion.TabIndex = 15;
+            // 
+            // chkIndependiente
+            // 
+            this.chkIndependiente.AutoSize = true;
+            this.chkIndependiente.Location = new System.Drawing.Point(19, 460);
+            this.chkIndependiente.Name = "chkIndependiente";
+            this.chkIndependiente.Size = new System.Drawing.Size(94, 17);
+            this.chkIndependiente.TabIndex = 16;
+            this.chkIndependiente.Text = "Independiente";
+            this.chkIndependiente.UseVisualStyleBackColor = true;
+            // 
             // btnCrear
             // 
             this.btnCrear.Enabled = false;
-            this.btnCrear.Location = new System.Drawing.Point(102, 425);
+            this.btnCrear.Location = new System.Drawing.Point(102, 493);
             this.btnCrear.Name = "btnCrear";
             this.btnCrear.Size = new System.Drawing.Size(75, 28);
-            this.btnCrear.TabIndex = 14;
+            this.btnCrear.TabIndex = 17;
             this.btnCrear.Text = "Crear";
             this.btnCrear.UseVisualStyleBackColor = true;
             this.btnCrear.Click += new System.EventHandler(this.btnCrear_Click);
             // 
             // btnGrabar
             // 
-            this.btnGrabar.Location = new System.Drawing.Point(183, 425);
+            this.btnGrabar.Location = new System.Drawing.Point(183, 493);
             this.btnGrabar.Name = "btnGrabar";
             this.btnGrabar.Size = new System.Drawing.Size(75, 28);
-            this.btnGrabar.TabIndex = 15;
+            this.btnGrabar.TabIndex = 18;
             this.btnGrabar.Text = "Grabar";
             this.btnGrabar.UseVisualStyleBackColor = true;
             this.btnGrabar.Click += new System.EventHandler(this.btnGrabar_Click);
             // 
             // btnCancelar
             // 
-            this.btnCancelar.Location = new System.Drawing.Point(264, 425);
+            this.btnCancelar.Location = new System.Drawing.Point(264, 493);
             this.btnCancelar.Name = "btnCancelar";
             this.btnCancelar.Size = new System.Drawing.Size(75, 28);
-            this.btnCancelar.TabIndex = 16;
+            this.btnCancelar.TabIndex = 19;
             this.btnCancelar.Text = "Cancelar";
             this.btnCancelar.UseVisualStyleBackColor = true;
             this.btnCancelar.Click += new System.EventHandler(this.btnCancelar_Click);
@@ -226,10 +265,13 @@ namespace DevExpressTreeListDemo
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(360, 469);
+            this.ClientSize = new System.Drawing.Size(360, 537);
             this.Controls.Add(this.btnCrear);
             this.Controls.Add(this.btnCancelar);
             this.Controls.Add(this.btnGrabar);
+            this.Controls.Add(this.chkIndependiente);
+            this.Controls.Add(this.nudDiasDuracion);
+            this.Controls.Add(this.lblDiasDuracion);
             this.Controls.Add(this.nudRendimientoEquipos);
             this.Controls.Add(this.lblRendimientoEquipos);
             this.Controls.Add(this.nudRendimientoManoObra);
@@ -252,6 +294,7 @@ namespace DevExpressTreeListDemo
             this.Text = "Modificar recurso";
             ((System.ComponentModel.ISupportInitialize)(this.nudRendimientoManoObra)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudRendimientoEquipos)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudDiasDuracion)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
         }

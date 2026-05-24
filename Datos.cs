@@ -23,7 +23,9 @@ namespace DevExpressTreeListDemo
         public int? TipoCalculoId { get; set; }
         public string Alias { get; set; }
         public decimal? Rendimiento { get; set; }
-        public decimal? Cuadrilla { get; set; }
+        public decimal? RendimientoEquipos { get; set; }
+        public decimal? DiasDuracion { get; set; }
+        public bool Independiente { get; set; }
     }
 
     public sealed class UnidadDto
@@ -49,8 +51,10 @@ namespace DevExpressTreeListDemo
         public int? TipoCalculoId { get; set; }
         public decimal? HorasJornal { get; set; }
         public decimal? Rendimiento { get; set; }
-        public decimal? Cuadrilla { get; set; }
         public decimal? Cantidad { get; set; }
+        public decimal? PesoUnitario { get; set; }
+        public decimal? DiasDuracion { get; set; }
+        public decimal? CantidadTotal { get; set; }
         public decimal? ValorUnitario { get; set; }
         public decimal? ValorTotal { get; set; }
     }
@@ -63,8 +67,10 @@ namespace DevExpressTreeListDemo
         public int? TipoCalculoId { get; set; }
         public int? UnidadId { get; set; }
         public decimal? Rendimiento { get; set; }
-        public decimal? Cuadrilla { get; set; }
-        public decimal Cantidad { get; set; }
+        public decimal? Cantidad { get; set; }
+        public decimal? PesoUnitario { get; set; }
+        public decimal? DiasDuracion { get; set; }
+        public decimal CantidadTotal { get; set; }
         public int Orden { get; set; }
     }
 
@@ -156,7 +162,9 @@ ORDER BY Recurso;";
                         int tipoCalculoIdOrdinal = TryGetOrdinal(reader, "TipoCalculoId");
                         int aliasOrdinal = TryGetOrdinal(reader, "Alias");
                         int rendimientoOrdinal = TryGetOrdinal(reader, "Rendimiento", "RendimientoManoObra");
-                        int cuadrillaOrdinal = TryGetOrdinal(reader, "Cuadrilla", "RendimientoEquipos");
+                        int rendimientoEquiposOrdinal = TryGetOrdinal(reader, "RendimientoEquipos");
+                        int diasDuracionOrdinal = reader.GetOrdinal("DiasDuracion");
+                        int independienteOrdinal = TryGetOrdinal(reader, "Independiente");
 
                         while (reader.Read())
                         {
@@ -176,9 +184,12 @@ ORDER BY Recurso;";
                                 Rendimiento = rendimientoOrdinal >= 0 && !reader.IsDBNull(rendimientoOrdinal)
                                     ? (decimal?)Convert.ToDecimal(reader.GetValue(rendimientoOrdinal))
                                     : null,
-                                Cuadrilla = cuadrillaOrdinal >= 0 && !reader.IsDBNull(cuadrillaOrdinal)
-                                    ? (decimal?)Convert.ToDecimal(reader.GetValue(cuadrillaOrdinal))
-                                    : null
+                                RendimientoEquipos = rendimientoEquiposOrdinal >= 0 && !reader.IsDBNull(rendimientoEquiposOrdinal)
+                                    ? (decimal?)Convert.ToDecimal(reader.GetValue(rendimientoEquiposOrdinal))
+                                    : null,
+                                DiasDuracion = reader.IsDBNull(diasDuracionOrdinal) ? (decimal?)null : reader.GetDecimal(diasDuracionOrdinal),
+                                Independiente = independienteOrdinal >= 0 && !reader.IsDBNull(independienteOrdinal)
+                                    && Convert.ToBoolean(reader.GetValue(independienteOrdinal))
                             });
                         }
                     }
@@ -253,7 +264,7 @@ ORDER BY Unidad;";
         public static List<RecursoPresupuestoDto> ObtenerRecursosPresupuesto(int empresaId, int presupuestoId)
         {
             const string sql = @"
-    SELECT EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoId, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cuadrilla, Cantidad, ValorUnitario, ValorTotal
+    SELECT EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoId, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal
 FROM PreRecursoxPresupuesto
     WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId
 ORDER BY Nivel, Orden, RecursoxPresupuestoId;";
@@ -285,8 +296,10 @@ ORDER BY Nivel, Orden, RecursoxPresupuestoId;";
                         int tipoCalculoIdOrdinal = reader.GetOrdinal("TipoCalculoId");
                         int horasJornalOrdinal = reader.GetOrdinal("HorasJornal");
                         int rendimientoOrdinal = reader.GetOrdinal("Rendimiento");
-                        int cuadrillaOrdinal = reader.GetOrdinal("Cuadrilla");
                         int cantidadOrdinal = reader.GetOrdinal("Cantidad");
+                        int pesoUnitarioOrdinal = reader.GetOrdinal("PesoUnitario");
+                        int diasDuracionOrdinal = reader.GetOrdinal("DiasDuracion");
+                        int cantidadTotalOrdinal = reader.GetOrdinal("CantidadTotal");
                         int valorUnitarioOrdinal = reader.GetOrdinal("ValorUnitario");
                         int valorTotalOrdinal = reader.GetOrdinal("ValorTotal");
 
@@ -311,8 +324,10 @@ ORDER BY Nivel, Orden, RecursoxPresupuestoId;";
                                 TipoCalculoId = reader.IsDBNull(tipoCalculoIdOrdinal) ? (int?)null : reader.GetInt32(tipoCalculoIdOrdinal),
                                 HorasJornal = reader.IsDBNull(horasJornalOrdinal) ? (decimal?)null : reader.GetDecimal(horasJornalOrdinal),
                                 Rendimiento = reader.IsDBNull(rendimientoOrdinal) ? (decimal?)null : reader.GetDecimal(rendimientoOrdinal),
-                                Cuadrilla = reader.IsDBNull(cuadrillaOrdinal) ? (decimal?)null : reader.GetDecimal(cuadrillaOrdinal),
                                 Cantidad = reader.IsDBNull(cantidadOrdinal) ? (decimal?)null : reader.GetDecimal(cantidadOrdinal),
+                                PesoUnitario = reader.IsDBNull(pesoUnitarioOrdinal) ? (decimal?)null : reader.GetDecimal(pesoUnitarioOrdinal),
+                                DiasDuracion = reader.IsDBNull(diasDuracionOrdinal) ? (decimal?)null : reader.GetDecimal(diasDuracionOrdinal),
+                                CantidadTotal = reader.IsDBNull(cantidadTotalOrdinal) ? (decimal?)null : reader.GetDecimal(cantidadTotalOrdinal),
                                 ValorUnitario = reader.IsDBNull(valorUnitarioOrdinal) ? (decimal?)null : reader.GetDecimal(valorUnitarioOrdinal),
                                 ValorTotal = reader.IsDBNull(valorTotalOrdinal) ? (decimal?)null : reader.GetDecimal(valorTotalOrdinal)
                             });
@@ -393,7 +408,7 @@ WHERE EmpresaId = @EmpresaId;";
         public static List<RecursoPartidaDto> ObtenerRecursosPartida(int empresaId, int partidaId)
         {
             const string sql = @"
-SELECT EmpresaId, PartidaId, RecursoId, TipoCalculoId, UnidadId, Rendimiento, Cuadrilla, Cantidad, Orden
+SELECT EmpresaId, PartidaId, RecursoId, TipoCalculoId, UnidadId, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, Orden
 FROM PreRecursoxPartida
 WHERE EmpresaId = @EmpresaId AND PartidaId = @PartidaId
 ORDER BY Orden;";
@@ -409,6 +424,7 @@ ORDER BY Orden;";
                     command.Parameters.Add("@PartidaId", SqlDbType.Int).Value = partidaId;
 
                     connection.Open();
+
                     using (var reader = command.ExecuteReader())
                     {
                         int empresaIdOrdinal = reader.GetOrdinal("EmpresaId");
@@ -417,8 +433,10 @@ ORDER BY Orden;";
                         int tipoCalculoIdOrdinal = reader.GetOrdinal("TipoCalculoId");
                         int unidadIdOrdinal = reader.GetOrdinal("UnidadId");
                         int rendimientoOrdinal = reader.GetOrdinal("Rendimiento");
-                        int cuadrillaOrdinal = reader.GetOrdinal("Cuadrilla");
                         int cantidadOrdinal = reader.GetOrdinal("Cantidad");
+                        int pesoUnitarioOrdinal = reader.GetOrdinal("PesoUnitario");
+                        int diasDuracionOrdinal = reader.GetOrdinal("DiasDuracion");
+                        int cantidadTotalOrdinal = reader.GetOrdinal("CantidadTotal");
                         int ordenOrdinal = reader.GetOrdinal("Orden");
 
                         while (reader.Read())
@@ -431,8 +449,10 @@ ORDER BY Orden;";
                                 TipoCalculoId = reader.IsDBNull(tipoCalculoIdOrdinal) ? (int?)null : reader.GetInt32(tipoCalculoIdOrdinal),
                                 UnidadId = reader.IsDBNull(unidadIdOrdinal) ? (int?)null : reader.GetInt32(unidadIdOrdinal),
                                 Rendimiento = reader.IsDBNull(rendimientoOrdinal) ? (decimal?)null : reader.GetDecimal(rendimientoOrdinal),
-                                Cuadrilla = reader.IsDBNull(cuadrillaOrdinal) ? (decimal?)null : reader.GetDecimal(cuadrillaOrdinal),
-                                Cantidad = reader.IsDBNull(cantidadOrdinal) ? 0m : reader.GetDecimal(cantidadOrdinal),
+                                Cantidad = reader.IsDBNull(cantidadOrdinal) ? (decimal?)null : reader.GetDecimal(cantidadOrdinal),
+                                PesoUnitario = reader.IsDBNull(pesoUnitarioOrdinal) ? (decimal?)null : reader.GetDecimal(pesoUnitarioOrdinal),
+                                DiasDuracion = reader.IsDBNull(diasDuracionOrdinal) ? (decimal?)null : reader.GetDecimal(diasDuracionOrdinal),
+                                CantidadTotal = reader.IsDBNull(cantidadTotalOrdinal) ? 0m : reader.GetDecimal(cantidadTotalOrdinal),
                                 Orden = reader.GetInt32(ordenOrdinal)
                             });
                         }
@@ -542,7 +562,9 @@ END";
             int? unidadId,
             int? tipoCalculoId,
             decimal? rendimiento,
-            decimal? cuadrilla)
+            decimal? rendimientoEquipos,
+            decimal? diasDuracion,
+            bool independiente)
         {
             if (string.IsNullOrWhiteSpace(recurso))
                 throw new ArgumentException("El nombre del recurso es obligatorio.", "recurso");
@@ -559,8 +581,8 @@ SELECT COLUMNPROPERTY(OBJECT_ID('PreRecurso'), 'RecursoId', 'IsIdentity');";
 DECLARE @HasTipoCalculo bit = CASE WHEN COL_LENGTH('PreRecurso', 'TipoCalculoId') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimiento bit = CASE WHEN COL_LENGTH('PreRecurso', 'Rendimiento') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoManoObra bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoManoObra') IS NOT NULL THEN 1 ELSE 0 END;
-DECLARE @HasCuadrilla bit = CASE WHEN COL_LENGTH('PreRecurso', 'Cuadrilla') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoEquipos bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoEquipos') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasIndependiente bit = CASE WHEN COL_LENGTH('PreRecurso', 'Independiente') IS NOT NULL THEN 1 ELSE 0 END;
 
 DECLARE @Sql nvarchar(max) = N'
 INSERT INTO PreRecurso (EmpresaId, TipoRecursoId, Recurso, UnidadId';
@@ -574,11 +596,13 @@ IF @HasRendimiento = 1
 IF @HasRendimientoManoObra = 1
     SET @Sql += N', RendimientoManoObra';
 
-IF @HasCuadrilla = 1
-    SET @Sql += N', Cuadrilla';
-
 IF @HasRendimientoEquipos = 1
     SET @Sql += N', RendimientoEquipos';
+
+SET @Sql += N', DiasDuracion';
+
+IF @HasIndependiente = 1
+    SET @Sql += N', Independiente';
 
 SET @Sql += N') VALUES (@EmpresaId, @TipoRecursoId, @Recurso, @UnidadId';
 
@@ -591,25 +615,29 @@ IF @HasRendimiento = 1
 IF @HasRendimientoManoObra = 1
     SET @Sql += N', @Rendimiento';
 
-IF @HasCuadrilla = 1
-    SET @Sql += N', @Cuadrilla';
-
 IF @HasRendimientoEquipos = 1
-    SET @Sql += N', @Cuadrilla';
+    SET @Sql += N', @RendimientoEquipos';
+
+SET @Sql += N', @DiasDuracion';
+
+IF @HasIndependiente = 1
+    SET @Sql += N', @Independiente';
 
 SET @Sql += N');
 SELECT CAST(SCOPE_IDENTITY() AS int);';
 
 EXEC sp_executesql
     @Sql,
-    N'@EmpresaId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @Cuadrilla decimal(18,5)',
+    N'@EmpresaId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @RendimientoEquipos decimal(18,5), @DiasDuracion decimal(18,5), @Independiente bit',
     @EmpresaId = @EmpresaId,
     @TipoRecursoId = @TipoRecursoId,
     @Recurso = @Recurso,
     @UnidadId = @UnidadId,
     @TipoCalculoId = @TipoCalculoId,
     @Rendimiento = @Rendimiento,
-    @Cuadrilla = @Cuadrilla;";
+    @RendimientoEquipos = @RendimientoEquipos,
+    @DiasDuracion = @DiasDuracion,
+    @Independiente = @Independiente;";
 
             const string nextIdSql = @"
 SELECT ISNULL(MAX(RecursoId), 0) + 1
@@ -620,8 +648,8 @@ WHERE EmpresaId = @EmpresaId;";
 DECLARE @HasTipoCalculo bit = CASE WHEN COL_LENGTH('PreRecurso', 'TipoCalculoId') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimiento bit = CASE WHEN COL_LENGTH('PreRecurso', 'Rendimiento') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoManoObra bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoManoObra') IS NOT NULL THEN 1 ELSE 0 END;
-DECLARE @HasCuadrilla bit = CASE WHEN COL_LENGTH('PreRecurso', 'Cuadrilla') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoEquipos bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoEquipos') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasIndependiente bit = CASE WHEN COL_LENGTH('PreRecurso', 'Independiente') IS NOT NULL THEN 1 ELSE 0 END;
 
 DECLARE @Sql nvarchar(max) = N'
 INSERT INTO PreRecurso (EmpresaId, RecursoId, TipoRecursoId, Recurso, UnidadId';
@@ -635,11 +663,13 @@ IF @HasRendimiento = 1
 IF @HasRendimientoManoObra = 1
     SET @Sql += N', RendimientoManoObra';
 
-IF @HasCuadrilla = 1
-    SET @Sql += N', Cuadrilla';
-
 IF @HasRendimientoEquipos = 1
     SET @Sql += N', RendimientoEquipos';
+
+SET @Sql += N', DiasDuracion';
+
+IF @HasIndependiente = 1
+    SET @Sql += N', Independiente';
 
 SET @Sql += N') VALUES (@EmpresaId, @RecursoId, @TipoRecursoId, @Recurso, @UnidadId';
 
@@ -652,17 +682,19 @@ IF @HasRendimiento = 1
 IF @HasRendimientoManoObra = 1
     SET @Sql += N', @Rendimiento';
 
-IF @HasCuadrilla = 1
-    SET @Sql += N', @Cuadrilla';
-
 IF @HasRendimientoEquipos = 1
-    SET @Sql += N', @Cuadrilla';
+    SET @Sql += N', @RendimientoEquipos';
+
+SET @Sql += N', @DiasDuracion';
+
+IF @HasIndependiente = 1
+    SET @Sql += N', @Independiente';
 
 SET @Sql += N');';
 
 EXEC sp_executesql
     @Sql,
-    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @Cuadrilla decimal(18,5)',
+    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @RendimientoEquipos decimal(18,5), @DiasDuracion decimal(18,5), @Independiente bit',
     @EmpresaId = @EmpresaId,
     @RecursoId = @RecursoId,
     @TipoRecursoId = @TipoRecursoId,
@@ -670,7 +702,9 @@ EXEC sp_executesql
     @UnidadId = @UnidadId,
     @TipoCalculoId = @TipoCalculoId,
     @Rendimiento = @Rendimiento,
-    @Cuadrilla = @Cuadrilla;";
+    @RendimientoEquipos = @RendimientoEquipos,
+    @DiasDuracion = @DiasDuracion,
+    @Independiente = @Independiente;";
 
             try
             {
@@ -697,7 +731,9 @@ EXEC sp_executesql
                                     unidadId,
                                     tipoCalculoId,
                                     rendimiento,
-                                    cuadrilla);
+                                    rendimientoEquipos,
+                                    diasDuracion,
+                                    independiente);
                                 transaction.Commit();
                                 return existingResourceId;
                             }
@@ -726,10 +762,17 @@ EXEC sp_executesql
                                 rendimientoParameter.Scale = 5;
                                 rendimientoParameter.Value = rendimiento.HasValue ? (object)rendimiento.Value : DBNull.Value;
 
-                                SqlParameter cuadrillaParameter = insertCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal);
-                                cuadrillaParameter.Precision = 18;
-                                cuadrillaParameter.Scale = 5;
-                                cuadrillaParameter.Value = cuadrilla.HasValue ? (object)cuadrilla.Value : DBNull.Value;
+                                SqlParameter rendimientoEquiposParameter = insertCommand.Parameters.Add("@RendimientoEquipos", SqlDbType.Decimal);
+                                rendimientoEquiposParameter.Precision = 18;
+                                rendimientoEquiposParameter.Scale = 5;
+                                rendimientoEquiposParameter.Value = rendimientoEquipos.HasValue ? (object)rendimientoEquipos.Value : DBNull.Value;
+
+                                SqlParameter diasDuracionParameter = insertCommand.Parameters.Add("@DiasDuracion", SqlDbType.Decimal);
+                                diasDuracionParameter.Precision = 18;
+                                diasDuracionParameter.Scale = 5;
+                                diasDuracionParameter.Value = diasDuracion.HasValue ? (object)diasDuracion.Value : DBNull.Value;
+
+                                insertCommand.Parameters.Add("@Independiente", SqlDbType.Bit).Value = independiente;
 
                                 recursoId = Convert.ToInt32(insertCommand.ExecuteScalar());
                             }
@@ -757,10 +800,17 @@ EXEC sp_executesql
                                 rendimientoParameter.Scale = 5;
                                 rendimientoParameter.Value = rendimiento.HasValue ? (object)rendimiento.Value : DBNull.Value;
 
-                                SqlParameter cuadrillaParameter = insertCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal);
-                                cuadrillaParameter.Precision = 18;
-                                cuadrillaParameter.Scale = 5;
-                                cuadrillaParameter.Value = cuadrilla.HasValue ? (object)cuadrilla.Value : DBNull.Value;
+                                SqlParameter rendimientoEquiposParameter = insertCommand.Parameters.Add("@RendimientoEquipos", SqlDbType.Decimal);
+                                rendimientoEquiposParameter.Precision = 18;
+                                rendimientoEquiposParameter.Scale = 5;
+                                rendimientoEquiposParameter.Value = rendimientoEquipos.HasValue ? (object)rendimientoEquipos.Value : DBNull.Value;
+
+                                SqlParameter diasDuracionParameter = insertCommand.Parameters.Add("@DiasDuracion", SqlDbType.Decimal);
+                                diasDuracionParameter.Precision = 18;
+                                diasDuracionParameter.Scale = 5;
+                                diasDuracionParameter.Value = diasDuracion.HasValue ? (object)diasDuracion.Value : DBNull.Value;
+
+                                insertCommand.Parameters.Add("@Independiente", SqlDbType.Bit).Value = independiente;
 
                                 insertCommand.ExecuteNonQuery();
                             }
@@ -791,7 +841,9 @@ EXEC sp_executesql
             int? unidadId,
             int? tipoCalculoId,
             decimal? rendimiento,
-            decimal? cuadrilla)
+            decimal? rendimientoEquipos,
+            decimal? diasDuracion,
+            bool independiente)
         {
             if (string.IsNullOrWhiteSpace(recurso))
                 throw new ArgumentException("El nombre del recurso es obligatorio.", "recurso");
@@ -800,8 +852,8 @@ EXEC sp_executesql
 DECLARE @HasTipoCalculo bit = CASE WHEN COL_LENGTH('PreRecurso', 'TipoCalculoId') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimiento bit = CASE WHEN COL_LENGTH('PreRecurso', 'Rendimiento') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoManoObra bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoManoObra') IS NOT NULL THEN 1 ELSE 0 END;
-DECLARE @HasCuadrilla bit = CASE WHEN COL_LENGTH('PreRecurso', 'Cuadrilla') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @HasRendimientoEquipos bit = CASE WHEN COL_LENGTH('PreRecurso', 'RendimientoEquipos') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @HasIndependiente bit = CASE WHEN COL_LENGTH('PreRecurso', 'Independiente') IS NOT NULL THEN 1 ELSE 0 END;
 
 DECLARE @Sql nvarchar(max) = N'
 UPDATE PreRecurso
@@ -818,18 +870,20 @@ IF @HasRendimiento = 1
 IF @HasRendimientoManoObra = 1
     SET @Sql += N', RendimientoManoObra = @Rendimiento';
 
-IF @HasCuadrilla = 1
-    SET @Sql += N', Cuadrilla = @Cuadrilla';
-
 IF @HasRendimientoEquipos = 1
-    SET @Sql += N', RendimientoEquipos = @Cuadrilla';
+    SET @Sql += N', RendimientoEquipos = @RendimientoEquipos';
+
+SET @Sql += N', DiasDuracion = @DiasDuracion';
+
+IF @HasIndependiente = 1
+    SET @Sql += N', Independiente = @Independiente';
 
 SET @Sql += N'
 WHERE EmpresaId = @EmpresaId AND RecursoId = @RecursoId;';
 
 EXEC sp_executesql
     @Sql,
-    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @Cuadrilla decimal(18,5)',
+    N'@EmpresaId int, @RecursoId int, @TipoRecursoId int, @Recurso nvarchar(250), @UnidadId int, @TipoCalculoId int, @Rendimiento decimal(18,5), @RendimientoEquipos decimal(18,5), @DiasDuracion decimal(18,5), @Independiente bit',
     @EmpresaId = @EmpresaId,
     @RecursoId = @RecursoId,
     @TipoRecursoId = @TipoRecursoId,
@@ -837,7 +891,9 @@ EXEC sp_executesql
     @UnidadId = @UnidadId,
     @TipoCalculoId = @TipoCalculoId,
     @Rendimiento = @Rendimiento,
-    @Cuadrilla = @Cuadrilla;";
+    @RendimientoEquipos = @RendimientoEquipos,
+    @DiasDuracion = @DiasDuracion,
+    @Independiente = @Independiente;";
 
             try
             {
@@ -856,10 +912,17 @@ EXEC sp_executesql
                     rendimientoParameter.Scale = 5;
                     rendimientoParameter.Value = rendimiento.HasValue ? (object)rendimiento.Value : DBNull.Value;
 
-                    SqlParameter cuadrillaParameter = command.Parameters.Add("@Cuadrilla", SqlDbType.Decimal);
-                    cuadrillaParameter.Precision = 18;
-                    cuadrillaParameter.Scale = 5;
-                    cuadrillaParameter.Value = cuadrilla.HasValue ? (object)cuadrilla.Value : DBNull.Value;
+                    SqlParameter rendimientoEquiposParameter = command.Parameters.Add("@RendimientoEquipos", SqlDbType.Decimal);
+                    rendimientoEquiposParameter.Precision = 18;
+                    rendimientoEquiposParameter.Scale = 5;
+                    rendimientoEquiposParameter.Value = rendimientoEquipos.HasValue ? (object)rendimientoEquipos.Value : DBNull.Value;
+
+                    SqlParameter diasDuracionParameter = command.Parameters.Add("@DiasDuracion", SqlDbType.Decimal);
+                    diasDuracionParameter.Precision = 18;
+                    diasDuracionParameter.Scale = 5;
+                    diasDuracionParameter.Value = diasDuracion.HasValue ? (object)diasDuracion.Value : DBNull.Value;
+
+                    command.Parameters.Add("@Independiente", SqlDbType.Bit).Value = independiente;
 
                     connection.Open();
                     command.ExecuteNonQuery();
@@ -881,29 +944,31 @@ EXEC sp_executesql
                 throw new ArgumentNullException("items");
 
             const string insertIdentitySql = @"
-INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cuadrilla, Cantidad, ValorUnitario, ValorTotal)
-VALUES (@EmpresaId, @PresupuestoId, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cuadrilla, @Cantidad, @ValorUnitario, @ValorTotal);
-SELECT CAST(SCOPE_IDENTITY() AS int);";
+INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal)
+ VALUES (@EmpresaId, @PresupuestoId, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cantidad, @PesoUnitario, @DiasDuracion, @CantidadTotal, @ValorUnitario, @ValorTotal);
+ SELECT CAST(SCOPE_IDENTITY() AS int);";
             const string insertRegularSql = @"
-INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, RecursoxPresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cuadrilla, Cantidad, ValorUnitario, ValorTotal)
-VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cuadrilla, @Cantidad, @ValorUnitario, @ValorTotal);";
+INSERT INTO PreRecursoxPresupuesto (EmpresaId, PresupuestoId, RecursoxPresupuestoId, Alias, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal)
+ VALUES (@EmpresaId, @PresupuestoId, @Id, @Alias, @PadreId, @Orden, @Nivel, @TipoRecursoId, @RecursoId, @UnidadId, @TipoCalculoId, @HorasJornal, @Rendimiento, @Cantidad, @PesoUnitario, @DiasDuracion, @CantidadTotal, @ValorUnitario, @ValorTotal);";
             const string updateSql = @"
-UPDATE PreRecursoxPresupuesto
-SET Alias = @Alias,
-    RecursoxPresupuestoPadreId = @PadreId,
-    Orden = @Orden,
-    Nivel = @Nivel,
-    TipoRecursoId = @TipoRecursoId,
-    RecursoId = @RecursoId,
-    UnidadId = @UnidadId,
-    TipoCalculoId = @TipoCalculoId,
-    HorasJornal = @HorasJornal,
-    Rendimiento = @Rendimiento,
-    Cuadrilla = @Cuadrilla,
-    Cantidad = @Cantidad,
-    ValorUnitario = @ValorUnitario,
-    ValorTotal = @ValorTotal
-WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPresupuestoId = @Id;";
+ UPDATE PreRecursoxPresupuesto
+ SET Alias = @Alias,
+     RecursoxPresupuestoPadreId = @PadreId,
+     Orden = @Orden,
+     Nivel = @Nivel,
+     TipoRecursoId = @TipoRecursoId,
+     RecursoId = @RecursoId,
+     UnidadId = @UnidadId,
+     TipoCalculoId = @TipoCalculoId,
+     HorasJornal = @HorasJornal,
+     Rendimiento = @Rendimiento,
+     Cantidad = @Cantidad,
+     PesoUnitario = @PesoUnitario,
+     DiasDuracion = @DiasDuracion,
+     CantidadTotal = @CantidadTotal,
+     ValorUnitario = @ValorUnitario,
+     ValorTotal = @ValorTotal
+ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPresupuestoId = @Id;";
             const string deleteByIdSql = @"
 DELETE FROM PreRecursoxPresupuesto
 WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPresupuestoId = @Id;";
@@ -965,8 +1030,10 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPres
                                         updateCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = item.TipoCalculoId.HasValue ? (object)item.TipoCalculoId.Value : DBNull.Value;
                                         updateCommand.Parameters.Add("@HorasJornal", SqlDbType.Decimal).Value = item.HorasJornal.HasValue ? (object)item.HorasJornal.Value : DBNull.Value;
                                         updateCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal).Value = item.Rendimiento.HasValue ? (object)item.Rendimiento.Value : DBNull.Value;
-                                        updateCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal).Value = item.Cuadrilla.HasValue ? (object)item.Cuadrilla.Value : DBNull.Value;
                                         updateCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = item.Cantidad.HasValue ? (object)item.Cantidad.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@PesoUnitario", SqlDbType.Decimal).Value = item.PesoUnitario.HasValue ? (object)item.PesoUnitario.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@DiasDuracion", SqlDbType.Decimal).Value = item.DiasDuracion.HasValue ? (object)item.DiasDuracion.Value : DBNull.Value;
+                                        updateCommand.Parameters.Add("@CantidadTotal", SqlDbType.Decimal).Value = item.CantidadTotal.HasValue ? (object)item.CantidadTotal.Value : DBNull.Value;
                                         updateCommand.Parameters.Add("@ValorUnitario", SqlDbType.Decimal).Value = item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : DBNull.Value;
                                         updateCommand.Parameters.Add("@ValorTotal", SqlDbType.Decimal).Value = item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : DBNull.Value;
                                         updateCommand.ExecuteNonQuery();
@@ -995,8 +1062,10 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPres
                                     insertCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = item.TipoCalculoId.HasValue ? (object)item.TipoCalculoId.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@HorasJornal", SqlDbType.Decimal).Value = item.HorasJornal.HasValue ? (object)item.HorasJornal.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal).Value = item.Rendimiento.HasValue ? (object)item.Rendimiento.Value : DBNull.Value;
-                                    insertCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal).Value = item.Cuadrilla.HasValue ? (object)item.Cuadrilla.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = item.Cantidad.HasValue ? (object)item.Cantidad.Value : DBNull.Value;
+                                    insertCommand.Parameters.Add("@PesoUnitario", SqlDbType.Decimal).Value = item.PesoUnitario.HasValue ? (object)item.PesoUnitario.Value : DBNull.Value;
+                                    insertCommand.Parameters.Add("@DiasDuracion", SqlDbType.Decimal).Value = item.DiasDuracion.HasValue ? (object)item.DiasDuracion.Value : DBNull.Value;
+                                    insertCommand.Parameters.Add("@CantidadTotal", SqlDbType.Decimal).Value = item.CantidadTotal.HasValue ? (object)item.CantidadTotal.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorUnitario", SqlDbType.Decimal).Value = item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorTotal", SqlDbType.Decimal).Value = item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : DBNull.Value;
                                     newPersistedId = Convert.ToInt32(insertCommand.ExecuteScalar());
@@ -1021,8 +1090,10 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPres
                                     insertCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = item.TipoCalculoId.HasValue ? (object)item.TipoCalculoId.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@HorasJornal", SqlDbType.Decimal).Value = item.HorasJornal.HasValue ? (object)item.HorasJornal.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal).Value = item.Rendimiento.HasValue ? (object)item.Rendimiento.Value : DBNull.Value;
-                                    insertCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal).Value = item.Cuadrilla.HasValue ? (object)item.Cuadrilla.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = item.Cantidad.HasValue ? (object)item.Cantidad.Value : DBNull.Value;
+                                    insertCommand.Parameters.Add("@PesoUnitario", SqlDbType.Decimal).Value = item.PesoUnitario.HasValue ? (object)item.PesoUnitario.Value : DBNull.Value;
+                                    insertCommand.Parameters.Add("@DiasDuracion", SqlDbType.Decimal).Value = item.DiasDuracion.HasValue ? (object)item.DiasDuracion.Value : DBNull.Value;
+                                    insertCommand.Parameters.Add("@CantidadTotal", SqlDbType.Decimal).Value = item.CantidadTotal.HasValue ? (object)item.CantidadTotal.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorUnitario", SqlDbType.Decimal).Value = item.ValorUnitario.HasValue ? (object)item.ValorUnitario.Value : DBNull.Value;
                                     insertCommand.Parameters.Add("@ValorTotal", SqlDbType.Decimal).Value = item.ValorTotal.HasValue ? (object)item.ValorTotal.Value : DBNull.Value;
                                     insertCommand.ExecuteNonQuery();
@@ -1033,12 +1104,19 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPres
                             usedDbIds.Add(newPersistedId);
                         }
 
+                        var rowsToDelete = new List<RecursoPresupuestoDto>();
                         for (int i = 0; i < existingRows.Count; i++)
                         {
                             RecursoPresupuestoDto existing = existingRows[i];
                             if (usedDbIds.Contains(existing.RecursoxPresupuestoId))
                                 continue;
-
+                            rowsToDelete.Add(existing);
+                        }
+                        // Borrar hijos antes que padres para respetar la FK auto-referenciada.
+                        rowsToDelete.Sort((a, b) => b.Nivel.CompareTo(a.Nivel));
+                        for (int i = 0; i < rowsToDelete.Count; i++)
+                        {
+                            RecursoPresupuestoDto existing = rowsToDelete[i];
                             using (var deleteCommand = new SqlCommand(deleteByIdSql, connection, transaction))
                             {
                                 deleteCommand.Parameters.Add("@EmpresaId", SqlDbType.Int).Value = empresaId;
@@ -1083,16 +1161,18 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId AND RecursoxPres
                 return;
 
             const string insertSql = @"
-INSERT INTO PreRecursoxPartida (EmpresaId, PartidaId, RecursoId, TipoCalculoId, UnidadId, Rendimiento, Cuadrilla, Cantidad, Orden)
-VALUES (@EmpresaId, @PartidaId, @RecursoId, @TipoCalculoId, @UnidadId, @Rendimiento, @Cuadrilla, @Cantidad, @Orden);";
+INSERT INTO PreRecursoxPartida (EmpresaId, PartidaId, RecursoId, TipoCalculoId, UnidadId, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, Orden)
+VALUES (@EmpresaId, @PartidaId, @RecursoId, @TipoCalculoId, @UnidadId, @Rendimiento, @Cantidad, @PesoUnitario, @DiasDuracion, @CantidadTotal, @Orden);";
             const string updateSql = @"
 UPDATE PreRecursoxPartida
 SET RecursoId = @RecursoId,
     TipoCalculoId = @TipoCalculoId,
     UnidadId = @UnidadId,
     Rendimiento = @Rendimiento,
-    Cuadrilla = @Cuadrilla,
-    Cantidad = @Cantidad
+    Cantidad = @Cantidad,
+    PesoUnitario = @PesoUnitario,
+    DiasDuracion = @DiasDuracion,
+    CantidadTotal = @CantidadTotal
 WHERE RecursoxPartidaId = @RecursoxPartidaId;";
             const string deleteSql = @"
 DELETE FROM PreRecursoxPartida
@@ -1136,8 +1216,10 @@ WHERE RecursoxPartidaId = @RecursoxPartidaId;";
                                     updateCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = entry.Value.TipoCalculoId.HasValue ? (object)entry.Value.TipoCalculoId.Value : DBNull.Value;
                                     updateCommand.Parameters.Add("@UnidadId", SqlDbType.Int).Value = entry.Value.UnidadId.HasValue ? (object)entry.Value.UnidadId.Value : DBNull.Value;
                                     updateCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal).Value = entry.Value.Rendimiento.HasValue ? (object)entry.Value.Rendimiento.Value : DBNull.Value;
-                                    updateCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal).Value = entry.Value.Cuadrilla.HasValue ? (object)entry.Value.Cuadrilla.Value : DBNull.Value;
-                                    updateCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = entry.Value.Cantidad;
+                                    updateCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = entry.Value.Cantidad.HasValue ? (object)entry.Value.Cantidad.Value : DBNull.Value;
+                                    updateCommand.Parameters.Add("@PesoUnitario", SqlDbType.Decimal).Value = entry.Value.PesoUnitario.HasValue ? (object)entry.Value.PesoUnitario.Value : DBNull.Value;
+                                    updateCommand.Parameters.Add("@DiasDuracion", SqlDbType.Decimal).Value = entry.Value.DiasDuracion.HasValue ? (object)entry.Value.DiasDuracion.Value : DBNull.Value;
+                                    updateCommand.Parameters.Add("@CantidadTotal", SqlDbType.Decimal).Value = entry.Value.CantidadTotal;
                                     updateCommand.ExecuteNonQuery();
                                 }
 
@@ -1152,8 +1234,10 @@ WHERE RecursoxPartidaId = @RecursoxPartidaId;";
                                 insertCommand.Parameters.Add("@TipoCalculoId", SqlDbType.Int).Value = entry.Value.TipoCalculoId.HasValue ? (object)entry.Value.TipoCalculoId.Value : DBNull.Value;
                                 insertCommand.Parameters.Add("@UnidadId", SqlDbType.Int).Value = entry.Value.UnidadId.HasValue ? (object)entry.Value.UnidadId.Value : DBNull.Value;
                                 insertCommand.Parameters.Add("@Rendimiento", SqlDbType.Decimal).Value = entry.Value.Rendimiento.HasValue ? (object)entry.Value.Rendimiento.Value : DBNull.Value;
-                                insertCommand.Parameters.Add("@Cuadrilla", SqlDbType.Decimal).Value = entry.Value.Cuadrilla.HasValue ? (object)entry.Value.Cuadrilla.Value : DBNull.Value;
-                                insertCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = entry.Value.Cantidad;
+                                insertCommand.Parameters.Add("@Cantidad", SqlDbType.Decimal).Value = entry.Value.Cantidad.HasValue ? (object)entry.Value.Cantidad.Value : DBNull.Value;
+                                insertCommand.Parameters.Add("@PesoUnitario", SqlDbType.Decimal).Value = entry.Value.PesoUnitario.HasValue ? (object)entry.Value.PesoUnitario.Value : DBNull.Value;
+                                insertCommand.Parameters.Add("@DiasDuracion", SqlDbType.Decimal).Value = entry.Value.DiasDuracion.HasValue ? (object)entry.Value.DiasDuracion.Value : DBNull.Value;
+                                insertCommand.Parameters.Add("@CantidadTotal", SqlDbType.Decimal).Value = entry.Value.CantidadTotal;
                                 insertCommand.Parameters.Add("@Orden", SqlDbType.Int).Value = entry.Value.Orden;
                                 insertCommand.ExecuteNonQuery();
                             }
@@ -1205,15 +1289,17 @@ SELECT COLUMNPROPERTY(OBJECT_ID('PreRecursoxPresupuesto'), 'RecursoxPresupuestoI
             public int? TipoCalculoId { get; set; }
             public int? UnidadId { get; set; }
             public decimal? Rendimiento { get; set; }
-            public decimal? Cuadrilla { get; set; }
-            public decimal Cantidad { get; set; }
+            public decimal? Cantidad { get; set; }
+            public decimal? PesoUnitario { get; set; }
+            public decimal? DiasDuracion { get; set; }
+            public decimal CantidadTotal { get; set; }
             public int Orden { get; set; }
         }
 
         private static List<RecursoPresupuestoDto> ObtenerRecursosPresupuesto(SqlConnection connection, SqlTransaction transaction, int empresaId, int presupuestoId)
         {
             const string sql = @"
-SELECT EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoId, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, Cuadrilla, Cantidad, ValorUnitario, ValorTotal
+SELECT EmpresaId, PresupuestoId, Alias, RecursoxPresupuestoId, RecursoxPresupuestoPadreId, Orden, Nivel, TipoRecursoId, RecursoId, UnidadId, TipoCalculoId, HorasJornal, Rendimiento, DiasDuracion, CantidadTotal, ValorUnitario, ValorTotal
 FROM PreRecursoxPresupuesto
 WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
 
@@ -1236,8 +1322,8 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
                     int tipoCalculoIdOrdinal = reader.GetOrdinal("TipoCalculoId");
                     int horasJornalOrdinal = reader.GetOrdinal("HorasJornal");
                     int rendimientoOrdinal = reader.GetOrdinal("Rendimiento");
-                    int cuadrillaOrdinal = reader.GetOrdinal("Cuadrilla");
-                    int cantidadOrdinal = reader.GetOrdinal("Cantidad");
+                    int diasDuracionOrdinal = reader.GetOrdinal("DiasDuracion");
+                    int cantidadTotalOrdinal = reader.GetOrdinal("CantidadTotal");
                     int valorUnitarioOrdinal = reader.GetOrdinal("ValorUnitario");
                     int valorTotalOrdinal = reader.GetOrdinal("ValorTotal");
 
@@ -1262,8 +1348,8 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
                             TipoCalculoId = reader.IsDBNull(tipoCalculoIdOrdinal) ? (int?)null : reader.GetInt32(tipoCalculoIdOrdinal),
                             HorasJornal = reader.IsDBNull(horasJornalOrdinal) ? (decimal?)null : reader.GetDecimal(horasJornalOrdinal),
                             Rendimiento = reader.IsDBNull(rendimientoOrdinal) ? (decimal?)null : reader.GetDecimal(rendimientoOrdinal),
-                            Cuadrilla = reader.IsDBNull(cuadrillaOrdinal) ? (decimal?)null : reader.GetDecimal(cuadrillaOrdinal),
-                            Cantidad = reader.IsDBNull(cantidadOrdinal) ? (decimal?)null : reader.GetDecimal(cantidadOrdinal),
+                            DiasDuracion = reader.IsDBNull(diasDuracionOrdinal) ? (decimal?)null : reader.GetDecimal(diasDuracionOrdinal),
+                            CantidadTotal = reader.IsDBNull(cantidadTotalOrdinal) ? (decimal?)null : reader.GetDecimal(cantidadTotalOrdinal),
                             ValorUnitario = reader.IsDBNull(valorUnitarioOrdinal) ? (decimal?)null : reader.GetDecimal(valorUnitarioOrdinal),
                             ValorTotal = reader.IsDBNull(valorTotalOrdinal) ? (decimal?)null : reader.GetDecimal(valorTotalOrdinal)
                         });
@@ -1403,8 +1489,8 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
                 || existing.TipoCalculoId != incoming.TipoCalculoId
                 || existing.HorasJornal != incoming.HorasJornal
                 || existing.Rendimiento != incoming.Rendimiento
-                || existing.Cuadrilla != incoming.Cuadrilla
-                || existing.Cantidad != incoming.Cantidad
+                || existing.DiasDuracion != incoming.DiasDuracion
+                || existing.CantidadTotal != incoming.CantidadTotal
                 || existing.ValorUnitario != incoming.ValorUnitario
                 || existing.ValorTotal != incoming.ValorTotal;
         }
@@ -1414,7 +1500,7 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
             var result = new List<RecursoPartidaStoredRow>();
             var ids = new List<int>(partidaIds);
 
-            var sql = "SELECT RecursoxPartidaId, PartidaId, RecursoId, TipoCalculoId, UnidadId, Rendimiento, Cuadrilla, Cantidad, Orden FROM PreRecursoxPartida WHERE EmpresaId = @EmpresaId AND PartidaId IN (";
+            var sql = "SELECT RecursoxPartidaId, PartidaId, RecursoId, TipoCalculoId, UnidadId, Rendimiento, Cantidad, PesoUnitario, DiasDuracion, CantidadTotal, Orden FROM PreRecursoxPartida WHERE EmpresaId = @EmpresaId AND PartidaId IN (";
             for (int i = 0; i < ids.Count; i++)
             {
                 if (i > 0)
@@ -1439,8 +1525,10 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
                     int tipoCalculoIdOrdinal = reader.GetOrdinal("TipoCalculoId");
                     int unidadIdOrdinal = reader.GetOrdinal("UnidadId");
                     int rendimientoOrdinal = reader.GetOrdinal("Rendimiento");
-                    int cuadrillaOrdinal = reader.GetOrdinal("Cuadrilla");
                     int cantidadOrdinal = reader.GetOrdinal("Cantidad");
+                    int pesoUnitarioOrdinal = reader.GetOrdinal("PesoUnitario");
+                    int diasDuracionOrdinal = reader.GetOrdinal("DiasDuracion");
+                    int cantidadTotalOrdinal = reader.GetOrdinal("CantidadTotal");
                     int ordenOrdinal = reader.GetOrdinal("Orden");
 
                     while (reader.Read())
@@ -1453,8 +1541,10 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
                             TipoCalculoId = reader.IsDBNull(tipoCalculoIdOrdinal) ? (int?)null : reader.GetInt32(tipoCalculoIdOrdinal),
                             UnidadId = reader.IsDBNull(unidadIdOrdinal) ? (int?)null : reader.GetInt32(unidadIdOrdinal),
                             Rendimiento = reader.IsDBNull(rendimientoOrdinal) ? (decimal?)null : reader.GetDecimal(rendimientoOrdinal),
-                            Cuadrilla = reader.IsDBNull(cuadrillaOrdinal) ? (decimal?)null : reader.GetDecimal(cuadrillaOrdinal),
-                            Cantidad = reader.GetDecimal(cantidadOrdinal),
+                            Cantidad = reader.IsDBNull(cantidadOrdinal) ? (decimal?)null : reader.GetDecimal(cantidadOrdinal),
+                            PesoUnitario = reader.IsDBNull(pesoUnitarioOrdinal) ? (decimal?)null : reader.GetDecimal(pesoUnitarioOrdinal),
+                            DiasDuracion = reader.IsDBNull(diasDuracionOrdinal) ? (decimal?)null : reader.GetDecimal(diasDuracionOrdinal),
+                            CantidadTotal = reader.GetDecimal(cantidadTotalOrdinal),
                             Orden = reader.GetInt32(ordenOrdinal)
                         });
                     }
@@ -1475,8 +1565,10 @@ WHERE EmpresaId = @EmpresaId AND PresupuestoId = @PresupuestoId;";
                 || existing.TipoCalculoId != incoming.TipoCalculoId
                 || existing.UnidadId != incoming.UnidadId
                 || existing.Rendimiento != incoming.Rendimiento
-                || existing.Cuadrilla != incoming.Cuadrilla
-                || existing.Cantidad != incoming.Cantidad;
+                || existing.Cantidad != incoming.Cantidad
+                || existing.PesoUnitario != incoming.PesoUnitario
+                || existing.DiasDuracion != incoming.DiasDuracion
+                || existing.CantidadTotal != incoming.CantidadTotal;
         }
 
         private static int TryGetOrdinal(SqlDataReader reader, params string[] columnNames)
