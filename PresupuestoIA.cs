@@ -175,7 +175,7 @@ namespace PresupuestoIA
         }
 
         public PresupuestoIA()
-            : this(DefaultEmpresaId, DefaultPresupuestoId)
+            : this(DefaultEmpresaId, DefaultPresupuestoId, null)
         {
         }
 
@@ -184,13 +184,15 @@ namespace PresupuestoIA
         /// de conexion, el id de empresa y el id de presupuesto.
         /// </summary>
         public PresupuestoIA(string connectionString, int empresaId, int presupuestoId)
-            : this(empresaId, presupuestoId)
+            : this(empresaId, presupuestoId, connectionString)
         {
-            Datos.Configure(connectionString);
         }
 
-        private PresupuestoIA(int empresaId, int presupuestoId)
+        private PresupuestoIA(int empresaId, int presupuestoId, string connectionString)
         {
+            if (!string.IsNullOrWhiteSpace(connectionString))
+                Datos.Configure(connectionString);
+
             EmpresaId = empresaId;
             PresupuestoId = presupuestoId;
 
