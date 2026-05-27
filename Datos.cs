@@ -11,6 +11,8 @@ namespace PresupuestoIA
         public int TipoRecursoId { get; set; }
         public string TipoRecurso { get; set; }
         public bool Activo { get; set; }
+        public int? UnidadIdDefault { get; set; }
+        public int? TipoCalculoIdDefault { get; set; }
     }
 
     public sealed class RecursoDto
@@ -113,7 +115,7 @@ namespace PresupuestoIA
         public static List<TipoRecursoDto> ObtenerTiposRecurso(int empresaId, bool activa)
         {
             const string sql = @"
-SELECT EmpresaId, TipoRecursoId, TipoRecurso, Activo
+SELECT *
 FROM PreTipoRecurso
 WHERE EmpresaId = @EmpresaId AND Activo = @Activo
 ORDER BY OrdenVisual, TipoRecurso;";
@@ -132,14 +134,27 @@ ORDER BY OrdenVisual, TipoRecurso;";
 
                     using (var reader = command.ExecuteReader())
                     {
+                        int empresaIdOrdinal = reader.GetOrdinal("EmpresaId");
+                        int tipoRecursoIdOrdinal = reader.GetOrdinal("TipoRecursoId");
+                        int tipoRecursoOrdinal = reader.GetOrdinal("TipoRecurso");
+                        int activoOrdinal = reader.GetOrdinal("Activo");
+                        int unidadIdDefaultOrdinal = TryGetOrdinal(reader, "UnidadIdDefault");
+                        int tipoCalculoIdDefaultOrdinal = TryGetOrdinal(reader, "TipoCalculoIdDefault", "TipoCalculoIdDefauld");
+
                         while (reader.Read())
                         {
                             resultado.Add(new TipoRecursoDto
                             {
-                                EmpresaId = reader.GetInt32(reader.GetOrdinal("EmpresaId")),
-                                TipoRecursoId = reader.GetInt32(reader.GetOrdinal("TipoRecursoId")),
-                                TipoRecurso = reader.GetString(reader.GetOrdinal("TipoRecurso")),
-                                Activo = Convert.ToInt32(reader["Activo"]) == 1
+                                EmpresaId = reader.GetInt32(empresaIdOrdinal),
+                                TipoRecursoId = reader.GetInt32(tipoRecursoIdOrdinal),
+                                TipoRecurso = reader.GetString(tipoRecursoOrdinal),
+                                Activo = Convert.ToInt32(reader.GetValue(activoOrdinal)) == 1,
+                                UnidadIdDefault = unidadIdDefaultOrdinal >= 0 && !reader.IsDBNull(unidadIdDefaultOrdinal)
+                                    ? (int?)Convert.ToInt32(reader.GetValue(unidadIdDefaultOrdinal))
+                                    : null,
+                                TipoCalculoIdDefault = tipoCalculoIdDefaultOrdinal >= 0 && !reader.IsDBNull(tipoCalculoIdDefaultOrdinal)
+                                    ? (int?)Convert.ToInt32(reader.GetValue(tipoCalculoIdDefaultOrdinal))
+                                    : null
                             });
                         }
                     }

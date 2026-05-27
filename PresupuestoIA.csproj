@@ -74,6 +74,10 @@
       <HintPath>$(DevExpressAssembliesPath)DevExpress.Printing.v$(DevExpressVersion).Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="DevExpress.XtraPrinting.v$(DevExpressVersion)">
+      <HintPath>$(DevExpressAssembliesPath)DevExpress.XtraPrinting.v$(DevExpressVersion).dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="DevExpress.Utils.v$(DevExpressVersion)">
       <HintPath>$(DevExpressAssembliesPath)DevExpress.Utils.v$(DevExpressVersion).dll</HintPath>
       <Private>True</Private>

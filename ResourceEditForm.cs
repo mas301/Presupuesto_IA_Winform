@@ -207,6 +207,7 @@ namespace PresupuestoIA
             nudHorasJornal.Value = NormalizeDecimal(initialHorasJornal);
             chkIndependiente.Checked = initialIndependiente;
 
+            ApplyResourceTypeDefaults();
             UpdateFieldVisibilityByResourceType();
             UpdateCreateButtonState();
         }
@@ -229,9 +230,45 @@ namespace PresupuestoIA
         private void cmbTipoRecurso_SelectedIndexChanged(object sender, EventArgs e)
         {
             ApplyResourceFilter();
+            ApplyResourceTypeDefaults();
             TryApplyUnitFromResourceText();
             UpdateFieldVisibilityByResourceType();
             UpdateCreateButtonState();
+        }
+
+        private void ApplyResourceTypeDefaults()
+        {
+            int? tipoRecursoId = cmbTipoRecurso.SelectedValue as int?;
+            if (!tipoRecursoId.HasValue && cmbTipoRecurso.SelectedValue != null)
+            {
+                int parsed;
+                if (int.TryParse(Convert.ToString(cmbTipoRecurso.SelectedValue), out parsed))
+                    tipoRecursoId = parsed;
+            }
+
+            if (!tipoRecursoId.HasValue)
+                return;
+
+            TipoRecursoDto tipoRecurso = null;
+            for (int i = 0; i < resourceTypes.Count; i++)
+            {
+                if (resourceTypes[i].TipoRecursoId == tipoRecursoId.Value)
+                {
+                    tipoRecurso = resourceTypes[i];
+                    break;
+                }
+            }
+
+            if (tipoRecurso == null)
+                return;
+
+            // Solo aplica defaults si el combo aun esta en "Ninguno"
+            // para no sobrescribir una seleccion explicita del usuario.
+            if (tipoRecurso.UnidadIdDefault.HasValue && (cmbUnidad.SelectedValue as int?) == null)
+                cmbUnidad.SelectedValue = tipoRecurso.UnidadIdDefault.Value;
+
+            if (tipoRecurso.TipoCalculoIdDefault.HasValue && (cmbTipoCalculo.SelectedValue as int?) == null)
+                cmbTipoCalculo.SelectedValue = tipoRecurso.TipoCalculoIdDefault.Value;
         }
 
         private void ApplyResourceFilter()

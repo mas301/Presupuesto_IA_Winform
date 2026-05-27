@@ -27,6 +27,8 @@ namespace PresupuestoIA
         private System.Windows.Forms.Button btnSaveBudgetDetail;
         private System.Windows.Forms.Button btnCreateResource;
         private System.Windows.Forms.Button btnRecalculateAll;
+        private System.Windows.Forms.Button btnImprimir;
+        private System.Windows.Forms.Button btnExportar;
         private System.Windows.Forms.Button btnPropiedades;
         private System.Windows.Forms.Button btnMoveUp;
         private System.Windows.Forms.Button btnMoveRight;
@@ -70,6 +72,8 @@ namespace PresupuestoIA
             this.btnSaveBudgetDetail = new System.Windows.Forms.Button();
             this.btnCreateResource = new System.Windows.Forms.Button();
             this.btnRecalculateAll = new System.Windows.Forms.Button();
+            this.btnImprimir = new System.Windows.Forms.Button();
+            this.btnExportar = new System.Windows.Forms.Button();
             this.btnPropiedades = new System.Windows.Forms.Button();
             this.btnMoveUp = new System.Windows.Forms.Button();
             this.btnMoveRight = new System.Windows.Forms.Button();
@@ -90,6 +94,8 @@ namespace PresupuestoIA
             this.topPanel.Controls.Add(this.btnMoveRight);
             this.topPanel.Controls.Add(this.btnMoveUp);
             this.topPanel.Controls.Add(this.btnPropiedades);
+            this.topPanel.Controls.Add(this.btnExportar);
+            this.topPanel.Controls.Add(this.btnImprimir);
             this.topPanel.Controls.Add(this.btnRecalculateAll);
             this.topPanel.Controls.Add(this.btnCreateResource);
             this.topPanel.Controls.Add(this.btnSaveBudgetDetail);
@@ -130,6 +136,36 @@ namespace PresupuestoIA
             this.btnRecalculateAll.UseVisualStyleBackColor = false;
             this.btnRecalculateAll.Click += new System.EventHandler(this.btnRecalculateAll_Click);
             // 
+            // btnImprimir
+            // 
+            this.btnImprimir.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(70)))), ((int)(((byte)(130)))), ((int)(((byte)(180)))));
+            this.btnImprimir.FlatAppearance.BorderSize = 0;
+            this.btnImprimir.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnImprimir.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnImprimir.ForeColor = System.Drawing.Color.White;
+            this.btnImprimir.Location = new System.Drawing.Point(386, 5);
+            this.btnImprimir.Name = "btnImprimir";
+            this.btnImprimir.Size = new System.Drawing.Size(90, 28);
+            this.btnImprimir.TabIndex = 3;
+            this.btnImprimir.Text = "Imprimir";
+            this.btnImprimir.UseVisualStyleBackColor = false;
+            this.btnImprimir.Click += new System.EventHandler(this.btnImprimir_Click);
+            // 
+            // btnExportar
+            // 
+            this.btnExportar.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(33)))), ((int)(((byte)(115)))), ((int)(((byte)(70)))));
+            this.btnExportar.FlatAppearance.BorderSize = 0;
+            this.btnExportar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnExportar.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnExportar.ForeColor = System.Drawing.Color.White;
+            this.btnExportar.Location = new System.Drawing.Point(482, 5);
+            this.btnExportar.Name = "btnExportar";
+            this.btnExportar.Size = new System.Drawing.Size(90, 28);
+            this.btnExportar.TabIndex = 4;
+            this.btnExportar.Text = "Exportar";
+            this.btnExportar.UseVisualStyleBackColor = false;
+            this.btnExportar.Click += new System.EventHandler(this.btnExportar_Click);
+            // 
             // btnPropiedades
             // 
             this.btnPropiedades.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(90)))), ((int)(((byte)(90)))), ((int)(((byte)(90)))));
@@ -137,10 +173,10 @@ namespace PresupuestoIA
             this.btnPropiedades.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnPropiedades.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnPropiedades.ForeColor = System.Drawing.Color.White;
-            this.btnPropiedades.Location = new System.Drawing.Point(386, 5);
+            this.btnPropiedades.Location = new System.Drawing.Point(578, 5);
             this.btnPropiedades.Name = "btnPropiedades";
             this.btnPropiedades.Size = new System.Drawing.Size(110, 28);
-            this.btnPropiedades.TabIndex = 3;
+            this.btnPropiedades.TabIndex = 4;
             this.btnPropiedades.Text = "Propiedades";
             this.btnPropiedades.UseVisualStyleBackColor = false;
             this.btnPropiedades.Click += new System.EventHandler(this.btnPropiedades_Click);
@@ -152,10 +188,10 @@ namespace PresupuestoIA
             this.btnMoveUp.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnMoveUp.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnMoveUp.ForeColor = System.Drawing.Color.White;
-            this.btnMoveUp.Location = new System.Drawing.Point(502, 5);
+            this.btnMoveUp.Location = new System.Drawing.Point(694, 5);
             this.btnMoveUp.Name = "btnMoveUp";
             this.btnMoveUp.Size = new System.Drawing.Size(44, 28);
-            this.btnMoveUp.TabIndex = 4;
+            this.btnMoveUp.TabIndex = 5;
             this.btnMoveUp.Text = "↑";
             this.btnMoveUp.Enabled = false;
             this.btnMoveUp.UseVisualStyleBackColor = false;
@@ -168,10 +204,10 @@ namespace PresupuestoIA
             this.btnMoveRight.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnMoveRight.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnMoveRight.ForeColor = System.Drawing.Color.White;
-            this.btnMoveRight.Location = new System.Drawing.Point(552, 5);
+            this.btnMoveRight.Location = new System.Drawing.Point(744, 5);
             this.btnMoveRight.Name = "btnMoveRight";
             this.btnMoveRight.Size = new System.Drawing.Size(44, 28);
-            this.btnMoveRight.TabIndex = 5;
+            this.btnMoveRight.TabIndex = 6;
             this.btnMoveRight.Text = "→";
             this.btnMoveRight.Enabled = false;
             this.btnMoveRight.UseVisualStyleBackColor = false;
@@ -184,10 +220,10 @@ namespace PresupuestoIA
             this.btnMoveDown.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnMoveDown.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnMoveDown.ForeColor = System.Drawing.Color.White;
-            this.btnMoveDown.Location = new System.Drawing.Point(602, 5);
+            this.btnMoveDown.Location = new System.Drawing.Point(794, 5);
             this.btnMoveDown.Name = "btnMoveDown";
             this.btnMoveDown.Size = new System.Drawing.Size(44, 28);
-            this.btnMoveDown.TabIndex = 6;
+            this.btnMoveDown.TabIndex = 7;
             this.btnMoveDown.Text = "↓";
             this.btnMoveDown.Enabled = false;
             this.btnMoveDown.UseVisualStyleBackColor = false;
@@ -200,10 +236,10 @@ namespace PresupuestoIA
             this.btnMoveLeft.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnMoveLeft.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnMoveLeft.ForeColor = System.Drawing.Color.White;
-            this.btnMoveLeft.Location = new System.Drawing.Point(652, 5);
+            this.btnMoveLeft.Location = new System.Drawing.Point(844, 5);
             this.btnMoveLeft.Name = "btnMoveLeft";
             this.btnMoveLeft.Size = new System.Drawing.Size(44, 28);
-            this.btnMoveLeft.TabIndex = 7;
+            this.btnMoveLeft.TabIndex = 8;
             this.btnMoveLeft.Text = "←";
             this.btnMoveLeft.Enabled = false;
             this.btnMoveLeft.UseVisualStyleBackColor = false;

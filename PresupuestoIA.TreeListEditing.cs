@@ -324,6 +324,15 @@ namespace PresupuestoIA
             return value is bool flag && flag;
         }
 
+        private bool IsNodeIndependiente(TreeListNode node)
+        {
+            if (node == null)
+                return false;
+
+            object value = node.GetValue(columnIndependiente);
+            return value is bool flag && flag;
+        }
+
         private void ReplicatePartidaManualValuesByResourceId(TreeListNode sourceNode, DevExpress.XtraTreeList.Columns.TreeListColumn column)
         {
             if (sourceNode == null || column == null)
@@ -339,6 +348,10 @@ namespace PresupuestoIA
 
             // Las partidas marcadas como Independiente no propagan cambios.
             if (IsPartidaIndependiente(sourcePartida))
+                return;
+
+            // Un recurso hijo marcado como Independiente tampoco propaga sus valores.
+            if (sourceNode != sourcePartida && IsNodeIndependiente(sourceNode))
                 return;
 
             int? sourcePartidaResourceId = ToNullableInt(sourcePartida.GetValue(columnRecurso));
@@ -366,6 +379,10 @@ namespace PresupuestoIA
 
                     TreeListNode targetNode = ResolveNodeByRelativePath(node, relativePath);
                     if (targetNode == null)
+                        continue;
+
+                    // Un recurso destino Independiente no acepta el cambio replicado.
+                    if (targetNode != node && IsNodeIndependiente(targetNode))
                         continue;
 
                     targetNode.SetValue(column, value);
@@ -479,6 +496,10 @@ namespace PresupuestoIA
             if (sourceNode == null || IsUnitValueAutomaticallyCalculated(sourceNode))
                 return;
 
+            // Un recurso marcado como Independiente no propaga su ValorUnitario.
+            if (IsNodeIndependiente(sourceNode))
+                return;
+
             int? resourceId = ToNullableInt(sourceNode.GetValue(columnRecurso));
             if (!resourceId.HasValue)
                 return;
@@ -491,6 +512,10 @@ namespace PresupuestoIA
                 foreach (TreeListNode node in EnumerateAllNodes())
                 {
                     if (node == sourceNode || IsUnitValueAutomaticallyCalculated(node))
+                        continue;
+
+                    // Los nodos Independiente tampoco reciben el cambio.
+                    if (IsNodeIndependiente(node))
                         continue;
 
                     int? nodeResourceId = ToNullableInt(node.GetValue(columnRecurso));

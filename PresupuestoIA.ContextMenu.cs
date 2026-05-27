@@ -389,6 +389,81 @@ namespace PresupuestoIA
             }
         }
 
+        private void btnImprimir_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (treeList1 == null)
+                    return;
+
+                if (!treeList1.IsPrintingAvailable)
+                {
+                    MessageBox.Show(this, "La funcionalidad de impresión no está disponible.", "Imprimir", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                treeList1.ShowPrintPreview();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.GetBaseException().Message, "Error al imprimir", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnExportar_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (treeList1 == null)
+                    return;
+
+                using (var dialog = new SaveFileDialog())
+                {
+                    dialog.Title = "Exportar a Excel";
+                    dialog.Filter = "Excel Workbook (*.xlsx)|*.xlsx|Excel 97-2003 (*.xls)|*.xls";
+                    dialog.FilterIndex = 1;
+                    dialog.FileName = "Presupuesto_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".xlsx";
+
+                    if (dialog.ShowDialog(this) != DialogResult.OK)
+                        return;
+
+                    if (dialog.FilterIndex == 2)
+                    {
+                        var xlsOptions = new DevExpress.XtraPrinting.XlsExportOptionsEx
+                        {
+                            ExportType = DevExpress.Export.ExportType.WYSIWYG,
+                            SheetName = "Presupuesto"
+                        };
+                        treeList1.ExportToXls(dialog.FileName, xlsOptions);
+                    }
+                    else
+                    {
+                        var xlsxOptions = new DevExpress.XtraPrinting.XlsxExportOptionsEx
+                        {
+                            ExportType = DevExpress.Export.ExportType.WYSIWYG,
+                            SheetName = "Presupuesto"
+                        };
+                        treeList1.ExportToXlsx(dialog.FileName, xlsxOptions);
+                    }
+
+                    var result = MessageBox.Show(this,
+                        "Exportación completada correctamente.\r\n¿Desea abrir el archivo?",
+                        "Exportar",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Information);
+
+                    if (result == DialogResult.Yes)
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.GetBaseException().Message, "Error al exportar", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void EditResourceWithForm(TreeListNode selectedNode, bool replicateToSameResource, bool preloadFromNode)
         {
             if (selectedNode == null)
